@@ -24,62 +24,87 @@
     <h1>💜 UniShoe</h1>
 
     <p class="tagline">
-      La plateforme qui réunit deux personnes pour compléter une seule paire de chaussures.
+      UniShoe connecte les personnes qui n’ont besoin que d’une seule chaussure pour compléter, échanger ou partager une paire.
     </p>
 
     <p class="slogan">
-      Parce qu’ensemble, chaque pas compte 💜
+      Parce qu'ensemble, chaque pas compte.
     </p>
   </header>
-<!-- AUTH / LOGIN -->
-<section class="auth">
-  <h2>🔐 Connexion</h2>
 
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Mot de passe">
+  <!-- AUTH -->
+  <section class="auth">
+    <h2>🔐 Connexion</h2>
 
-  <button onclick="registerUser()">S'inscrire</button>
-  <button onclick="loginUser()">Connexion</button>
-  <button onclick="logoutUser()">Déconnexion</button>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Mot de passe">
 
-  <p id="welcome"></p>
-</section>
+    <button onclick="registerUser()">S'inscrire</button>
+    <button onclick="loginUser()">Connexion</button>
+    <button onclick="logoutUser()">Déconnexion</button>
+
+    <p id="welcome"></p>
+  </section>
+
+  <!-- ONBOARDING / INTENTION -->
+  <section class="profile">
+    <h2>👤 Ton besoin</h2>
+
+    <select id="userIntent">
+      <option value="">Je veux…</option>
+      <option value="complete">Compléter une paire (j’ai une seule chaussure)</option>
+      <option value="exchange">Échanger une chaussure</option>
+      <option value="share">Partager un achat à deux</option>
+    </select>
+
+    <!-- FIX ID ICI -->
+    <select id="profileShoeSide">
+      <option value="">Mon côté</option>
+      <option value="gauche">Gauche</option>
+      <option value="droite">Droite</option>
+    </select>
+
+    <button onclick="saveProfile()">Continuer</button>
+
+    <p id="profileStatus"></p>
+  </section>
+
   <!-- HOW -->
   <section class="how">
     <h2>🧠 Comment ça marche ?</h2>
 
     <div class="step">
       <div class="icon">📝</div>
-      <h3>Publier une annonce</h3>
-      <p>Chaussure seule ou recherche de complément.</p>
+      <h3>Tu indiques ton besoin</h3>
+      <p>Compléter, échanger ou partager une paire.</p>
     </div>
 
     <div class="step">
       <div class="icon">🔍</div>
-      <h3>Trouver un match</h3>
-      <p>Swipe les annonces et trouve ton duo.</p>
+      <h3>Tu trouves un match</h3>
+      <p>On te connecte avec quelqu’un qui a besoin de ton complément.</p>
     </div>
 
     <div class="step">
       <div class="icon">🤝</div>
-      <h3>Échanger</h3>
-      <p>Achat, échange ou achat à deux.</p>
+      <h3>Vous vous connectez</h3>
+      <p>Échange, achat à deux ou complément de paire.</p>
     </div>
   </section>
 
-  <!-- PROFIL -->
-  
-
-  <!-- FORM -->
+  <!-- FORM ANNONCE -->
   <section class="form">
-    <h2>📢 Publier</h2>
+    <h2>📢 Publier une chaussure</h2>
 
     <input id="title" placeholder="Marque / modèle">
     <input id="size" placeholder="Pointure">
-    <input id="city" placeholder="Ville"><input type="file" id="photoFile" accept="image/*">
+    <input id="city" placeholder="Ville">
 
-    <select id="side">
-      <option value="">Côté</option>
+    <input type="file" id="photoFile" accept="image/*">
+
+    <!-- FIX ID ICI -->
+    <select id="adShoeSide">
+      <option value="">Côté de la chaussure</option>
       <option value="gauche">Gauche</option>
       <option value="droite">Droite</option>
     </select>
@@ -88,7 +113,10 @@
   </section>
 
   <!-- MATCH -->
-  <div id="matchBox"></div>
+  <section class="match">
+    <h2>💜 Tes matches</h2>
+    <div id="matchBox"></div>
+  </section>
 
   <!-- ADS -->
   <section>
@@ -98,7 +126,7 @@
 
   <!-- SWIPE -->
   <section class="swipe">
-    <h2>💜 Swipe</h2>
+    <h2>💜 Découvrir</h2>
     <div id="cardContainer"></div>
 
     <div class="swipe-buttons">
@@ -109,7 +137,7 @@
 
   <!-- CHAT -->
   <section class="chat">
-    <h2>💬 Chat</h2>
+    <h2>💬 Messages</h2>
 
     <div id="messages"></div>
 

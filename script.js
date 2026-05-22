@@ -5,12 +5,15 @@ const { createClient } = supabase;
 
 const supabaseClient = createClient(
   "https://laozayivkrlmfqkzxswd.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxhb3pheWl2a3JsbWZxa3p4c3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzU0NDgsImV4cCI6MjA5NDg1MTQ0OH0.raN9MS4BlWx16ve2K3mzG_vOCQ5hJGAUSPcHbABsQJ4"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxhb3pheWl2a3JsbWZxa3p4c3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzU0NDgsImV4cCI6MjA5NDg1MTQ0OH0.raN9MS4BlWx16ve2K3mzG_vOCQ5JGAUSPcHbABsQJ4"
 );
 
-// ================= AUTH =================
+// ================= STATE =================
 let currentUser = null;
+let ads = [];
+let currentIndex = 0;
 
+// ================= AUTH =================
 async function getUser() {
   const { data } = await supabaseClient.auth.getUser();
   currentUser = data?.user || null;
@@ -21,11 +24,9 @@ function updateAuthUI() {
   const w = document.getElementById("welcome");
   if (!w) return;
 
-  if (currentUser) {
-    w.textContent = "Connecté : " + currentUser.email + " 👟";
-  } else {
-    w.textContent = "Non connecté";
-  }
+  w.textContent = currentUser
+    ? "Connecté : " + currentUser.email + " 👟"
+    : "Non connecté";
 }
 
 getUser();
@@ -40,10 +41,7 @@ async function loginUser() {
     password
   });
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+  if (error) return alert(error.message);
 
   currentUser = data.user;
   updateAuthUI();
@@ -55,15 +53,12 @@ async function registerUser() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  const { data, error } = await supabaseClient.auth.signUp({
+  const { error } = await supabaseClient.auth.signUp({
     email,
     password
   });
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+  if (error) return alert(error.message);
 
   alert("Compte créé ✔ connecte-toi !");
 }
@@ -75,12 +70,32 @@ async function logoutUser() {
   updateAuthUI();
 }
 
-// ================= UPLOAD PHOTO =================
+// ================= PROFILE =================
+async function saveProfile() {
+  if (!currentUser) return alert("Connecte-toi d'abord");
+
+  const intent = document.getElementById("userIntent").value;
+  const side = document.getElementById("profileShoeSide").value;
+
+  const { error } = await supabaseClient
+    .from("profiles")
+    .upsert({
+      id: currentUser.id,
+      intent,
+      side
+    });
+
+  if (error) return alert(error.message);
+
+  document.getElementById("profileStatus").textContent =
+    "Profil enregistré ✔";
+}
+
+// ================= PHOTO =================
 async function uploadPhoto(file) {
   const fileName = Date.now() + "_" + file.name;
 
-  const { error } = await supabaseClient
-    .storage
+  const { error } = await supabaseClient.storage
     .from("shoes")
     .upload(fileName, file);
 
@@ -89,8 +104,7 @@ async function uploadPhoto(file) {
     return "";
   }
 
-  const { data } = supabaseClient
-    .storage
+  const { data } = supabaseClient.storage
     .from("shoes")
     .getPublicUrl(fileName);
 
@@ -98,9 +112,6 @@ async function uploadPhoto(file) {
 }
 
 // ================= ADS =================
-let ads = [];
-let currentIndex = 0;
-
 async function loadAds() {
   const { data } = await supabaseClient
     .from("ads")
@@ -111,6 +122,7 @@ async function loadAds() {
 
   displayAds();
   renderCard();
+  renderMatches();
 }
 
 async function addAd() {
@@ -125,24 +137,27 @@ async function addAd() {
     title: document.getElementById("title").value,
     size: parseInt(document.getElementById("size").value),
     city: document.getElementById("city").value.toLowerCase(),
-    side: document.getElementById("side").value,
+    side: document.getElementById("adShoeSide").value,
     user_name: currentUser.email,
     user_id: currentUser.id,
     photo: photoUrl
   };
 
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from("ads")
     .insert([ad])
     .select();
 
-  if (data) ads.unshift(data[0]);
+  if (error) return alert(error.message);
+
+  if (data?.length) ads.unshift(data[0]);
 
   displayAds();
   renderCard();
+  renderMatches();
 }
 
-// ================= DISPLAY ADS =================
+// ================= DISPLAY =================
 function displayAds() {
   const c = document.getElementById("ads");
   if (!c) return;
@@ -153,6 +168,36 @@ function displayAds() {
       ${ad.title}<br>
       👟 ${ad.size} | 📍 ${ad.city} | ${ad.side}
       ${ad.photo ? `<img src="${ad.photo}" class="ad-img">` : ""}
+    </div>
+  `).join("");
+}
+
+// ================= MATCHING =================
+function renderMatches() {
+  const box = document.getElementById("matchBox");
+  if (!box || !currentUser) return;
+
+  const myProfileSide = document.getElementById("profileShoeSide")?.value;
+
+  const matches = ads.filter(ad => {
+    return (
+      ad.user_id !== currentUser.id &&
+      ad.side &&
+      myProfileSide &&
+      ad.side !== myProfileSide
+    );
+  });
+
+  if (!matches.length) {
+    box.innerHTML = "Aucun match pour le moment";
+    return;
+  }
+
+  box.innerHTML = matches.map(m => `
+    <div class="match">
+      💜 Match potentiel<br>
+      ${m.title}<br>
+      👟 ${m.size} | 📍 ${m.city} | ${m.side}
     </div>
   `).join("");
 }
