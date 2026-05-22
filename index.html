@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>UniShoe</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+
+  <meta name="theme-color" content="#1e90ff">
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- HERO -->
+  <header class="hero">
+    <h1>💜 UniShoe</h1>
+
+    <p class="tagline">
+      La plateforme qui réunit deux personnes pour compléter une seule paire de chaussures.
+    </p>
+
+    <p class="slogan">
+      Parce qu’ensemble, chaque pas compte 💜
+    </p>
+  </header>
+<!-- AUTH / LOGIN -->
+<section class="auth">
+  <h2>🔐 Connexion</h2>
+
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Mot de passe">
+
+  <button onclick="registerUser()">S'inscrire</button>
+  <button onclick="loginUser()">Connexion</button>
+  <button onclick="logoutUser()">Déconnexion</button>
+
+  <p id="welcome"></p>
+</section>
+  <!-- HOW -->
+  <section class="how">
+    <h2>🧠 Comment ça marche ?</h2>
+
+    <div class="step">
+      <div class="icon">📝</div>
+      <h3>Publier une annonce</h3>
+      <p>Chaussure seule ou recherche de complément.</p>
+    </div>
+
+    <div class="step">
+      <div class="icon">🔍</div>
+      <h3>Trouver un match</h3>
+      <p>Swipe les annonces et trouve ton duo.</p>
+    </div>
+
+    <div class="step">
+      <div class="icon">🤝</div>
+      <h3>Échanger</h3>
+      <p>Achat, échange ou achat à deux.</p>
+    </div>
+  </section>
+
+  <!-- PROFIL -->
+  
+
+  <!-- FORM -->
+  <section class="form">
+    <h2>📢 Publier</h2>
+
+    <input id="title" placeholder="Marque / modèle">
+    <input id="size" placeholder="Pointure">
+    <input id="city" placeholder="Ville"><input type="file" id="photoFile" accept="image/*">
+
+    <select id="side">
+      <option value="">Côté</option>
+      <option value="gauche">Gauche</option>
+      <option value="droite">Droite</option>
+    </select>
+
+    <button onclick="addAd()">Publier</button>
+  </section>
+
+  <!-- MATCH -->
+  <div id="matchBox"></div>
+
+  <!-- ADS -->
+  <section>
+    <h2>Annonces</h2>
+    <div id="ads"></div>
+  </section>
+
+  <!-- SWIPE -->
+  <section class="swipe">
+    <h2>💜 Swipe</h2>
+    <div id="cardContainer"></div>
+
+    <div class="swipe-buttons">
+      <button onclick="swipeLeft()">❌</button>
+      <button onclick="swipeRight()">💜</button>
+    </div>
+  </section>
+
+  <!-- CHAT -->
+  <section class="chat">
+    <h2>💬 Chat</h2>
+
+    <div id="messages"></div>
+
+    <input id="messageInput" placeholder="Message...">
+    <button onclick="sendMessage()">Envoyer</button>
+  </section>
+
+</div>
+
+<script src="script.js"></script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js");
+  }
+</script>
+
+</body>
+</html>
