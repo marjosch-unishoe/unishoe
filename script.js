@@ -1,4 +1,4 @@
-console.log("🔥 UniShoe READY");
+console.log("🔥 UniShoe FULL READY");
 
 // ================= SUPABASE =================
 const supabaseClient = supabase.createClient(
@@ -10,7 +10,7 @@ const supabaseClient = supabase.createClient(
 let currentUser = null;
 let ads = [];
 
-// ================= INIT USER =================
+// ================= GET USER =================
 async function getUser() {
   const { data } = await supabaseClient.auth.getUser();
   currentUser = data?.user || null;
@@ -45,7 +45,8 @@ async function loginUser() {
 
   currentUser = data.user;
 
-  console.log("LOGIN OK:", currentUser.id);
+  console.log("🔥 USER CONNECTÉ");
+  console.log("ID =", currentUser.id);
 
   await loadProfile();
 
@@ -65,7 +66,7 @@ async function registerUser() {
 
   if (error) return alert(error.message);
 
-  alert("Compte créé !");
+  alert("Compte créé ✔");
 }
 
 // ================= LOGOUT =================
@@ -88,7 +89,7 @@ async function saveProfile() {
     side
   });
 
-  alert("Profil sauvegardé");
+  alert("Profil enregistré");
 }
 
 async function loadProfile() {
@@ -162,7 +163,7 @@ function displayAds() {
   const container = document.getElementById("ads");
 
   container.innerHTML = ads.map(ad => `
-    <div>
+    <div class="ad">
       <b>${ad.title}</b><br>
       ${ad.city}<br>
       ${ad.size}<br>

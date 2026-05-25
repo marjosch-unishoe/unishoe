@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>UniShoe</title>
 
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+
+  <meta name="theme-color" content="#1e90ff">
 
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
@@ -14,10 +19,23 @@
 
 <div class="app">
 
-  <h1>💜 UniShoe</h1>
+  <!-- HERO -->
+  <header class="hero">
+    <h1>💜 UniShoe 💜</h1>
+
+    <p class="tagline">
+      UniShoe connecte les personnes qui n’ont besoin que d’une seule chaussure afin de trouver, échanger ou partager plus facilement.
+    </p>
+
+    <p class="slogan">
+      Parce qu'ensemble, chaque pas compte.
+    </p>
+  </header>
 
   <!-- AUTH -->
-  <section>
+  <section class="auth">
+    <h2>🔐 Connexion</h2>
+
     <input id="email" placeholder="Email">
     <input id="password" type="password" placeholder="Mot de passe">
 
@@ -29,32 +47,62 @@
   </section>
 
   <!-- PROFILE -->
-  <section>
+  <section class="profile">
+    <h2>👤 Ce que tu recherches</h2>
+
     <select id="userIntent">
-      <option value="">Je veux...</option>
-      <option value="match">Trouver</option>
-      <option value="exchange">Échanger</option>
+      <option value="">Je veux…</option>
+      <option value="match">Trouver la chaussure qu'il me faut</option>
+      <option value="exchange">Échanger une chaussure</option>
+      <option value="share">Partager un achat</option>
     </select>
 
     <select id="profileShoeSide">
-      <option value="">Côté</option>
+      <option value="">Mon côté</option>
       <option value="gauche">Gauche</option>
       <option value="droite">Droite</option>
     </select>
 
-    <button onclick="saveProfile()">Sauvegarder profil</button>
+    <button onclick="saveProfile()">Continuer</button>
+
+    <p id="profileStatus"></p>
   </section>
 
-  <!-- ADD -->
-  <section>
-    <input id="title" placeholder="Titre">
+  <!-- HOW -->
+  <section class="how">
+    <h2>🧠 Comment ça marche ?</h2>
+
+    <div class="step">
+      <div class="icon">📝</div>
+      <h3>Tu indiques ton besoin</h3>
+      <p>Trouver une chaussure, échanger une chaussure ou partager un achat.</p>
+    </div>
+
+    <div class="step">
+      <div class="icon">🔍</div>
+      <h3>Tu trouves un match</h3>
+      <p>On te connecte avec quelqu’un de compatible.</p>
+    </div>
+
+    <div class="step">
+      <div class="icon">🤝</div>
+      <h3>Vous vous connectez</h3>
+      <p>Et chacun trouve chaussure à son pied !</p>
+    </div>
+  </section>
+
+  <!-- FORM ANNONCE -->
+  <section class="form">
+    <h2>📢 Publier une chaussure</h2>
+
+    <input id="title" placeholder="Marque / modèle">
     <input id="size" placeholder="Pointure">
     <input id="city" placeholder="Ville">
 
-    <input type="file" id="photoFile">
+    <input type="file" id="photoFile" accept="image/*">
 
     <select id="adShoeSide">
-      <option value="">Côté chaussure</option>
+      <option value="">Côté de la chaussure</option>
       <option value="gauche">Gauche</option>
       <option value="droite">Droite</option>
     </select>
@@ -64,7 +112,7 @@
 
   <!-- ADS -->
   <section>
-    <h2>Annonces</h2>
+    <h2>📦 Annonces</h2>
     <div id="ads"></div>
   </section>
 
