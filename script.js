@@ -3,7 +3,7 @@ console.log("🔥 UniShoe FULL READY");
 // ================= SUPABASE =================
 const supabaseClient = supabase.createClient(
   "https://laozayivkrlmfqkzxswd.supabase.co",
-  "TON_ANON_KEY"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxhb3pheWl2a3JsbWZxa3p4c3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzU0NDgsImV4cCI6MjA5NDg1MTQ0OH0.raN9MS4BlWx16ve2K3mzG_vOCQ5hJGAUSPcHbABsQJ4"
 );
 
 // ================= STATE =================
@@ -132,15 +132,19 @@ async function addAd() {
 
   if (file) photoUrl = await uploadPhoto(file);
 
-  const ad = {
-    title: document.getElementById("title").value,
-    size: document.getElementById("size").value,
-    city: document.getElementById("city").value,
-    side: document.getElementById("adShoeSide").value,
-    user_id: currentUser.id,
-    user_name: currentUser.email,
-    photo: photoUrl
-  };
+const ad = {
+  title: document.getElementById("title").value,
+  size: document.getElementById("size").value,
+  condition: document.getElementById("condition")?.value,
+  city: document.getElementById("city").value,
+  side: document.getElementById("adShoeSide").value,
+
+  description: document.getElementById("description").value,
+
+  user_id: currentUser.id,
+  user_name: currentUser.email,
+  photo: photoUrl
+};
 
   await supabaseClient.from("ads").insert([ad]);
 
@@ -164,13 +168,20 @@ function displayAds() {
 
   container.innerHTML = ads.map(ad => `
     <div class="ad">
+
       <b>${ad.title}</b><br>
-      ${ad.city}<br>
-      ${ad.size}<br>
+
+      📝 ${ad.description || "Pas de description"}<br><br>
+
+      👟 ${ad.size} |
+      📍 ${ad.city} |
+      ${ad.side}<br>
+
+      💎 État : ${ad.condition || "Non précisé"}<br><br>
 
       ${ad.photo ? `<img src="${ad.photo}" width="150">` : ""}
 
-      <br>
+      <br><br>
 
       ${
         currentUser &&
@@ -178,6 +189,7 @@ function displayAds() {
           ? `<button onclick="deleteAd('${ad.id}')">Supprimer</button>`
           : ""
       }
+
     </div>
   `).join("");
 }

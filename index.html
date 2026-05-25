@@ -58,7 +58,7 @@
     </select>
 
     <select id="profileShoeSide">
-      <option value="">Mon côté</option>
+      <option value="">Côté que je possède</option>
       <option value="gauche">Gauche</option>
       <option value="droite">Droite</option>
     </select>
@@ -97,6 +97,7 @@
 
     <input id="title" placeholder="Marque / modèle">
     <input id="size" placeholder="Pointure">
+    <textarea id="description" placeholder="Description de la chaussure"></textarea>
     <input id="city" placeholder="Ville">
 
     <input type="file" id="photoFile" accept="image/*">
@@ -106,6 +107,14 @@
       <option value="gauche">Gauche</option>
       <option value="droite">Droite</option>
     </select>
+
+    <select id="condition">
+  <option value="">État de la chaussure</option>
+  <option value="neuf">Neuf</option>
+  <option value="tres_bon">Très bon état</option>
+  <option value="bon">Bon état</option>
+  <option value="use">Usé</option>
+</select>
 
     <button onclick="addAd()">Publier</button>
   </section>
