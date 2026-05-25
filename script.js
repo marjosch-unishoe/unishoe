@@ -158,6 +158,15 @@ async function addAd() {
 
   if (file) photoUrl = await uploadPhoto(file);
 
+  // 🔥 récupérer intent + option
+  const intent = document.getElementById("userIntent").value;
+
+  const selectedOption =
+    document.querySelector('input[name="matchSide"]:checked')?.value ||
+    document.querySelector('input[name="exchange"]:checked')?.value ||
+    document.querySelector('input[name="share"]:checked')?.value;
+
+  // 📦 objet propre envoyé à Supabase
   const ad = {
     title: document.getElementById("title").value,
     size: document.getElementById("size").value,
@@ -167,9 +176,14 @@ async function addAd() {
     description: document.getElementById("description").value,
     user_id: currentUser.id,
     user_name: currentUser.email,
-    photo: photoUrl
+    photo: photoUrl,
+
+    // 🔥 AJOUT IMPORTANT
+    intent: intent,
+    option: selectedOption
   };
 
+  // 🚀 INSERT SUPABASE (PROPRE)
   const { data, error } = await supabaseClient
     .from("ads")
     .insert([ad]);
@@ -182,7 +196,7 @@ async function addAd() {
     return;
   }
 
-  showToast("💜 annonce publiée avec succès !");;
+  showToast("💜 annonce publiée avec succès !");
 }
 
 
@@ -274,3 +288,32 @@ function showToast(message) {
 
   setTimeout(() => toast.remove(), 2000);
 }
+function isMatch(ad1, ad2) {
+  if (ad1.intent !== "match") return false;
+  if (ad2.intent !== "match") return false;
+
+  return (
+    (ad1.option === "gauche" && ad2.option === "droite") ||
+    (ad1.option === "droite" && ad2.option === "gauche")
+  );
+}async function loadMatches() {
+  const { data: ads } = await supabaseClient
+    .from("ads")
+    .select("*");
+
+  const container = document.getElementById("ads");
+  container.innerHTML = "";
+
+  for (let i = 0; i < ads.length; i++) {
+    for (let j = i + 1; j < ads.length; j++) {
+      if (isMatch(ads[i], ads[j])) {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <p>🔥 MATCH TROUVÉ</p>
+          <p>${ads[i].title} ↔ ${ads[j].title}</p>
+        `;
+        container.appendChild(div);
+      }
+    }
+  }
+}loadMatches();
