@@ -139,13 +139,22 @@ function displayAds() {
 
   container.innerHTML = ads.map(ad => `
     <div class="ad">
+
       <b>${ad.title}</b><br>
       📝 ${ad.description || ""}<br>
       📍 ${ad.city || ""} | 👟 ${ad.size}<br>
+
       ${ad.photo ? `<img src="${ad.photo}" width="150">` : ""}
+
+      <br><br>
+
+      <button onclick="likeAd()">❤️ Intéressant</button>
+      <button onclick="dislikeAd()">❌ Pas intéressé</button>
+
     </div>
   `).join("");
 }
+
 
 // ================= ADD AD =================
 async function addAd() {
@@ -233,14 +242,13 @@ async function loadMatches() {
         matchFound = true;
 
         const div = document.createElement("div");
+        div.className = "ad";
 
         div.innerHTML = `
-          <div class="ad">
-            <h3>🔥 MATCH TROUVÉ</h3>
-            <p>${data[i].title} ↔ ${data[j].title}</p>
-            <button onclick="likeAd()">❤️</button>
-            <button onclick="dislikeAd()">❌</button>
-          </div>
+          <h3>🔥 MATCH TROUVÉ</h3>
+          <p>${data[i].title} ↔ ${data[j].title}</p>
+          <button onclick="likeAd()">❤️</button>
+          <button onclick="dislikeAd()">❌</button>
         `;
 
         container.appendChild(div);
