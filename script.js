@@ -29,7 +29,7 @@ function updateAuthUI() {
     : "Non connecté";
 }
 
-getUser();console.log("CURRENT USER:", data?.user);
+getUser();
 
 // ================= LOGIN =================
 async function loginUser() {
@@ -41,19 +41,20 @@ async function loginUser() {
     password
   });
 
-  if (error) return alert(error.message);
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
   currentUser = data.user;
 
+  console.log("🔥 USER CONNECTÉ");
+  console.log("ID =", currentUser.id);
+  console.log("EMAIL =", currentUser.email);
+
   updateAuthUI();
   loadAds();
-}currentUser = data.user;
-
-console.log("USER ID:", currentUser.id);
-console.log("EMAIL:", currentUser.email);
-
-updateAuthUI();
-loadAds();
+}
 
 // ================= REGISTER =================
 async function registerUser() {
@@ -109,6 +110,8 @@ async function saveProfile() {
 // ================= PHOTO =================
 async function uploadPhoto(file) {
 
+  console.log("FILE:", file);
+
   const fileName = `${Date.now()}_${file.name}`;
 
   const { data, error } =
@@ -121,6 +124,8 @@ async function uploadPhoto(file) {
     return "";
   }
 
+  console.log("UPLOAD RESPONSE:", data);
+
   const path = data.path;
 
   const { data: urlData } =
@@ -128,8 +133,9 @@ async function uploadPhoto(file) {
       .from("shoes")
       .getPublicUrl(path);
 
-  return urlData.publicUrl; console.log("FILE:", file);
-console.log("UPLOAD RESPONSE:", data, error);
+  console.log("PUBLIC URL:", urlData.publicUrl);
+
+  return urlData.publicUrl;
 }
 
 
