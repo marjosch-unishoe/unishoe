@@ -103,26 +103,29 @@ async function saveProfile() {
 // ================= PHOTO =================
 async function uploadPhoto(file) {
 
-  const fileName =
-    Date.now() + "_" + file.name;
+  const fileName = `${Date.now()}_${file.name}`;
 
-  const { error } =
+  const { data, error } =
     await supabaseClient.storage
       .from("shoes")
       .upload(fileName, file);
 
   if (error) {
-    console.log(error);
+    console.log("UPLOAD ERROR:", error);
     return "";
   }
 
-  const { data } =
+  const path = data.path;
+
+  const { data: urlData } =
     supabaseClient.storage
       .from("shoes")
-      .getPublicUrl(fileName);
+      .getPublicUrl(path);
 
-  return data.publicUrl;
+  return urlData.publicUrl; console.log("FILE:", file);
+console.log("UPLOAD RESPONSE:", data, error);
 }
+
 
 // ================= ADS =================
 async function loadAds() {
