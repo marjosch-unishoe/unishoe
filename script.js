@@ -191,7 +191,7 @@ function displayAds() {
 
       <br><br>
 
-      $${
+      ${
   currentUser &&
   (currentUser.id === ad.user_id || currentUser.role === "admin")
     ? `<button onclick="deleteAd('${ad.id}', this.parentElement)">
