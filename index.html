@@ -57,11 +57,10 @@
       <option value="share">Partager un achat</option>
     </select>
 
-    <select id="profileShoeSide">
-      <option value="">Côté que je possède</option>
-      <option value="gauche">Gauche</option>
-      <option value="droite">Droite</option>
-    </select>
+    
+
+    <!-- FIX IMPORTANT : AJOUT -->
+    <div id="matchOptions"></div>
 
     <button onclick="saveProfile()">Continuer</button>
 
@@ -109,12 +108,12 @@
     </select>
 
     <select id="condition">
-  <option value="">État de la chaussure</option>
-  <option value="neuf">Neuf</option>
-  <option value="tres_bon">Très bon état</option>
-  <option value="bon">Bon état</option>
-  <option value="use">Usé</option>
-</select>
+      <option value="">État de la chaussure</option>
+      <option value="neuf">Neuf</option>
+      <option value="tres_bon">Très bon état</option>
+      <option value="bon">Bon état</option>
+      <option value="use">Usé</option>
+    </select>
 
     <button onclick="addAd()">Publier</button>
   </section>
@@ -127,7 +126,8 @@
 
 </div>
 
-<script src="script.js"></script>
+<!-- FIX IMPORTANT : defer -->
+<script src="script.js" defer></script>
 
 </body>
 </html>

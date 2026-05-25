@@ -5,7 +5,33 @@ const supabaseClient = supabase.createClient(
   "https://laozayivkrlmfqkzxswd.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxhb3pheWl2a3JsbWZxa3p4c3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzU0NDgsImV4cCI6MjA5NDg1MTQ0OH0.raN9MS4BlWx16ve2K3mzG_vOCQ5hJGAUSPcHbABsQJ4"
 );
+document.getElementById("userIntent").addEventListener("change", function () {
+  const container = document.getElementById("matchOptions");
+  const value = this.value;
 
+  container.innerHTML = "";
+
+  if (value === "match") {
+    container.innerHTML = `
+      <label><input type="radio" name="matchSide" value="gauche"> Je cherche une chaussure gauche</label><br>
+      <label><input type="radio" name="matchSide" value="droite"> Je cherche une chaussure droite</label>
+    `;
+  }
+
+  if (value === "exchange") {
+    container.innerHTML = `
+      <label><input type="radio" name="exchange" value="right_to_left"> J’ai une chaussure droite à échanger contre une chaussure gauche</label><br>
+      <label><input type="radio" name="exchange" value="left_to_right"> J’ai une chaussure gauche à échanger contre une chaussure droite</label>
+    `;
+  }
+
+  if (value === "share") {
+    container.innerHTML = `
+      <label><input type="radio" name="share" value="gauche"> J’ai besoin du côté gauche</label><br>
+      <label><input type="radio" name="share" value="droite"> J’ai besoin du côté droit</label>
+    `;
+  }
+});
 // ================= STATE =================
 let currentUser = null;
 let ads = [];
@@ -81,7 +107,7 @@ async function saveProfile() {
   if (!currentUser) return alert("Connecte-toi");
 
   const intent = document.getElementById("userIntent").value;
-  const side = document.getElementById("profileShoeSide").value;
+
 
   await supabaseClient.from("profiles").upsert({
     id: currentUser.id,
@@ -158,6 +184,7 @@ async function addAd() {
 
   showToast("💜 annonce publiée avec succès !");;
 }
+
 
 // ================= LOAD ADS =================
 async function loadAds() {
