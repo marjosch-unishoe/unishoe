@@ -47,7 +47,13 @@ async function loginUser() {
 
   updateAuthUI();
   loadAds();
-}
+}currentUser = data.user;
+
+console.log("USER ID:", currentUser.id);
+console.log("EMAIL:", currentUser.email);
+
+updateAuthUI();
+loadAds();
 
 // ================= REGISTER =================
 async function registerUser() {
