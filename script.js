@@ -29,7 +29,7 @@ function updateAuthUI() {
     : "Non connecté";
 }
 
-getUser();
+getUser();console.log("CURRENT USER:", data?.user);
 
 // ================= LOGIN =================
 async function loginUser() {
