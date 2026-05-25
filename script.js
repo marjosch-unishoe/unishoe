@@ -197,6 +197,9 @@ async function addAd() {
   }
 
   showToast("💜 annonce publiée avec succès !");
+
+  // 🔥 REFRESH MATCHES
+  await loadMatches();
 }
 
 
@@ -317,3 +320,55 @@ function isMatch(ad1, ad2) {
     }
   }
 }loadMatches();
+
+function isMatch(a, b) {
+  if (a.intent !== "match") return false;
+  if (b.intent !== "match") return false;
+
+  return (
+    (a.option === "gauche" && b.option === "droite") ||
+    (a.option === "droite" && b.option === "gauche")
+  );
+}
+async function loadMatches() {
+  const { data: ads, error } = await supabaseClient
+    .from("ads")
+    .select("*");
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  const container = document.getElementById("ads");
+  container.innerHTML = "";
+
+  let matchFound = false;
+
+  for (let i = 0; i < ads.length; i++) {
+  for (let j = i + 1; j < ads.length; j++) {
+
+    if (isMatch(ads[i], ads[j])) {
+
+      const div = document.createElement("div");
+
+      div.innerHTML = `
+        <h3>${ads[i].title} ↔ ${ads[j].title}</h3>
+        <p>${ads[i].city}</p>
+
+        <button onclick="likeAd()">❤️ Intéressant</button>
+        <button onclick="dislikeAd()">❌ Pas intéressé</button>
+      `;
+
+      container.appendChild(div);
+    }
+  }
+}
+      }
+
+
+  if (!matchFound) {
+    container.innerHTML = "<p>Aucun match pour le moment</p>";
+  }
+
+loadMatches();
