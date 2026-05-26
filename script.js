@@ -298,8 +298,8 @@ async function uploadPhoto(file) {
 
 // ================= MATCHING =================
 function isMatch(a, b) {
-  const aSide = a.side;
-  const bSide = b.side;
+  const aSide = (a.side || "").trim().toLowerCase();
+  const bSide = (b.side || "").trim().toLowerCase();
 
   const aSize = Number(a.size);
   const bSize = Number(b.size);
@@ -313,47 +313,11 @@ function isMatch(a, b) {
 
   const sizeMatch = Math.abs(aSize - bSize) <= 1;
 
-  const intentMatch = a.intent && b.intent;
+  const intentMatch =
+    a.intent === "match" &&
+    b.intent === "match";
 
   return sideMatch && sizeMatch && intentMatch;
-}
-
-async function loadMatches() {
-  const { data, error } = await supabaseClient
-    .from("ads")
-    .select("*");
-
-  if (error) return console.error(error);
-
-  const matchContainer = document.getElementById("matchContainer");
-  matchContainer.innerHTML = "";
-
-  let matchFound = false;
-
-  for (let i = 0; i < data.length; i++) {
-    for (let j = i + 1; j < data.length; j++) {
-
-      if (isMatch(data[i], data[j])) {
-        matchFound = true;
-
-        const div = document.createElement("div");
-        div.className = "ad";
-
-        div.innerHTML = `
-          <h3>🔥 MATCH TROUVÉ</h3>
-          <p>${data[i].title} ↔ ${data[j].title}</p>
-        `;
-
-        matchContainer.appendChild(div);
-      }
-    }
-  }
-
-  if (!matchFound) {
-    matchContainer.innerHTML = "<p>Aucun match pour le moment</p>";
-  }
-
-  displayAds();
 }
 
 // ================= ACTIONS =================
