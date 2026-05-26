@@ -57,9 +57,7 @@
       <option value="share">Partager un achat</option>
     </select>
 
-    
-
-    <!-- FIX IMPORTANT : AJOUT -->
+    <!-- IMPORTANT -->
     <div id="matchOptions"></div>
 
     <button onclick="saveProfile()">Continuer</button>
@@ -101,7 +99,8 @@
 
     <input type="file" id="photoFile" accept="image/*">
 
-    <select id="adShoeSide">
+    <!-- FIX IMPORTANT -->
+    <select id="adShoeSide" required>
       <option value="">Côté de la chaussure</option>
       <option value="gauche">Gauche</option>
       <option value="droite">Droite</option>
@@ -121,6 +120,11 @@
   <!-- ADS -->
   <section>
     <h2>📦 Annonces</h2>
+
+    <!-- MATCHS -->
+    <div id="matchContainer"></div>
+
+    <!-- ADS -->
     <div id="ads"></div>
   </section>
 

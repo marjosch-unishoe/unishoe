@@ -6,6 +6,11 @@ const supabaseClient = supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxhb3pheWl2a3JsbWZxa3p4c3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzU0NDgsImV4cCI6MjA5NDg1MTQ0OH0.raN9MS4BlWx16ve2K3mzG_vOCQ5hJGAUSPcHbABsQJ4"
 );
 
+// ================= STATE =================
+let currentUser = null;
+let ads = [];
+window.editingAdId = null;
+
 // ================= USER INTENT UI =================
 document.getElementById("userIntent").addEventListener("change", function () {
   const container = document.getElementById("matchOptions");
@@ -22,8 +27,8 @@ document.getElementById("userIntent").addEventListener("change", function () {
 
   if (value === "exchange") {
     container.innerHTML = `
-      <label><input type="radio" name="exchange" value="right_to_left"> J’ai une chaussure droite à échanger</label><br>
-      <label><input type="radio" name="exchange" value="left_to_right"> J’ai une chaussure gauche à échanger</label>
+      <label><input type="radio" name="exchange" value="right_to_left"> J’ai une chaussure droite à échanger contre une gauche</label><br>
+      <label><input type="radio" name="exchange" value="left_to_right"> J’ai une chaussure gauche à échanger contre une droite</label>
     `;
   }
 
@@ -35,14 +40,11 @@ document.getElementById("userIntent").addEventListener("change", function () {
   }
 });
 
-// ================= STATE =================
-let currentUser = null;
-let ads = [];
-
 // ================= AUTH =================
 async function getUser() {
   const { data } = await supabaseClient.auth.getUser();
   currentUser = data?.user || null;
+
   updateAuthUI();
   loadAds();
 }
@@ -68,7 +70,7 @@ async function loginUser() {
 
   if (error) return alert(error.message);
 
-  currentUser = data.user;
+  currentUser = data?.user || null;
 
   await loadProfile();
   updateAuthUI();
@@ -101,13 +103,23 @@ async function saveProfile() {
 
   const intent = document.getElementById("userIntent").value;
 
-  await supabaseClient.from("profiles").upsert({
-    id: currentUser.id,
-    intent,
-    side: document.getElementById("profileShoeSide").value
-  });
+  const selectedSide =
+    document.querySelector('input[name="matchSide"]:checked')?.value ||
+    document.querySelector('input[name="exchange"]:checked')?.value ||
+    document.querySelector('input[name="share"]:checked')?.value;
 
-  alert("Profil enregistré");
+  const { error } = await supabaseClient
+    .from("profiles")
+    .upsert({
+      id: currentUser.id,
+      intent,
+      side: selectedSide
+    });
+
+  if (error) return alert(error.message);
+
+  document.getElementById("profileStatus").textContent =
+    "✅ Profil enregistré";
 }
 
 async function loadProfile() {
@@ -119,7 +131,7 @@ async function loadProfile() {
 
   if (data) {
     document.getElementById("userIntent").value = data.intent || "";
-    document.getElementById("profileShoeSide").value = data.side || "";
+    console.log("Profil chargé", data);
   }
 }
 
@@ -150,11 +162,56 @@ function displayAds() {
 
       <button onclick="likeAd()">❤️ Intéressant</button>
       <button onclick="dislikeAd()">❌ Pas intéressé</button>
+      <button onclick="editAd(${ad.id})">✏️ Modifier</button>
 
     </div>
   `).join("");
 }
 
+// ================= EDIT AD =================
+function editAd(id) {
+  const ad = ads.find(a => a.id === id);
+  if (!ad) return;
+
+  document.getElementById("title").value = ad.title || "";
+  document.getElementById("size").value = ad.size || "";
+  document.getElementById("city").value = ad.city || "";
+  document.getElementById("description").value = ad.description || "";
+  document.getElementById("userIntent").value = ad.intent || "";
+  document.getElementById("adShoeSide").value = ad.side || "";
+
+  window.editingAdId = id;
+
+  document.querySelector("button[onclick='addAd()']").textContent =
+    "💾 Mettre à jour";
+
+  document.getElementById("cancelBtn").style.display = "inline-block";
+
+  showToast("✏️ Mode édition activé");
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ================= CANCEL EDIT =================
+function cancelEdit() {
+  window.editingAdId = null;
+
+  document.getElementById("title").value = "";
+  document.getElementById("size").value = "";
+  document.getElementById("city").value = "";
+  document.getElementById("description").value = "";
+  document.getElementById("userIntent").value = "";
+  document.getElementById("adShoeSide").value = "";
+
+  document.getElementById("profileStatus").textContent = "";
+
+  document.querySelector("button[onclick='addAd()']").textContent =
+    "📢 Publier";
+
+  document.getElementById("cancelBtn").style.display = "none";
+
+  showToast("✖️ Mode édition annulé");
+}
 
 // ================= ADD AD =================
 async function addAd() {
@@ -167,10 +224,16 @@ async function addAd() {
 
   const intent = document.getElementById("userIntent").value;
 
-  const selectedOption =
+  const side =
+    document.getElementById("adShoeSide")?.value ||
     document.querySelector('input[name="matchSide"]:checked')?.value ||
     document.querySelector('input[name="exchange"]:checked')?.value ||
     document.querySelector('input[name="share"]:checked')?.value;
+
+  if (!side) {
+    alert("Choisis un côté de chaussure");
+    return;
+  }
 
   const ad = {
     title: document.getElementById("title").value,
@@ -182,16 +245,37 @@ async function addAd() {
     user_name: currentUser.email,
     photo: photoUrl,
     intent,
-    option: selectedOption
+    side
   };
 
-  const { error } = await supabaseClient
-    .from("ads")
-    .insert([ad]);
+  let query;
 
-  if (error) return alert(error.message);
+  if (window.editingAdId) {
+    query = supabaseClient
+      .from("ads")
+      .update(ad)
+      .eq("id", window.editingAdId);
+  } else {
+    query = supabaseClient
+      .from("ads")
+      .insert([ad]);
+  }
 
-  showToast("💜 annonce publiée !");
+  const { error } = await query;
+
+  if (error) {
+    console.error(error);
+    return alert(error.message);
+  }
+
+  window.editingAdId = null;
+
+  document.querySelector("button[onclick='addAd()']").textContent =
+    "📢 Publier";
+
+  document.getElementById("cancelBtn").style.display = "none";
+
+  showToast("💜 sauvegardé !");
   await loadMatches();
 }
 
@@ -214,13 +298,24 @@ async function uploadPhoto(file) {
 
 // ================= MATCHING =================
 function isMatch(a, b) {
-  if (a.intent !== "match") return false;
-  if (b.intent !== "match") return false;
+  const aSide = a.side;
+  const bSide = b.side;
 
-  return (
-    (a.option === "gauche" && b.option === "droite") ||
-    (a.option === "droite" && b.option === "gauche")
-  );
+  const aSize = Number(a.size);
+  const bSize = Number(b.size);
+
+  if (!aSide || !bSide) return false;
+  if (isNaN(aSize) || isNaN(bSize)) return false;
+
+  const sideMatch =
+    (aSide === "gauche" && bSide === "droite") ||
+    (aSide === "droite" && bSide === "gauche");
+
+  const sizeMatch = Math.abs(aSize - bSize) <= 1;
+
+  const intentMatch = a.intent && b.intent;
+
+  return sideMatch && sizeMatch && intentMatch;
 }
 
 async function loadMatches() {
@@ -230,8 +325,8 @@ async function loadMatches() {
 
   if (error) return console.error(error);
 
-  const container = document.getElementById("ads");
-  container.innerHTML = "";
+  const matchContainer = document.getElementById("matchContainer");
+  matchContainer.innerHTML = "";
 
   let matchFound = false;
 
@@ -247,18 +342,18 @@ async function loadMatches() {
         div.innerHTML = `
           <h3>🔥 MATCH TROUVÉ</h3>
           <p>${data[i].title} ↔ ${data[j].title}</p>
-          <button onclick="likeAd()">❤️</button>
-          <button onclick="dislikeAd()">❌</button>
         `;
 
-        container.appendChild(div);
+        matchContainer.appendChild(div);
       }
     }
   }
 
   if (!matchFound) {
-    container.innerHTML = "<p>Aucun match pour le moment</p>";
+    matchContainer.innerHTML = "<p>Aucun match pour le moment</p>";
   }
+
+  displayAds();
 }
 
 // ================= ACTIONS =================
