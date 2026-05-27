@@ -9,6 +9,8 @@ const supabaseClient = supabase.createClient(
 // ================= STATE =================
 let currentUser = null;
 let ads = [];
+let currentChatUser = null;
+
 window.editingAdId = null;
 
 // ================= USER INTENT UI =================
@@ -166,13 +168,17 @@ async function saveProfile() {
     document.querySelector('input[name="exchange"]:checked')?.value ||
     document.querySelector('input[name="share"]:checked')?.value;
 
+  const searchSize =
+    document.getElementById("searchSize").value;
+
   const { error } =
     await supabaseClient
       .from("profiles")
       .upsert({
         id: currentUser.id,
         intent,
-        side: selectedSide
+        side: selectedSide,
+        size: searchSize
       });
 
   if (error) {
@@ -182,6 +188,8 @@ async function saveProfile() {
 
   document.getElementById("profileStatus")
     .textContent = "✅ Profil enregistré";
+
+  loadMatches();
 }
 
 // ================= LOAD ADS =================
@@ -266,7 +274,7 @@ function displayAds() {
               </button>
             `
             : `
-              <button onclick="contactUser('${ad.user_name}')">
+              <button onclick="openChat('${ad.user_id}')">
                 💬 Contacter
               </button>
             `
@@ -306,8 +314,6 @@ async function addAd() {
   const intent =
     document.getElementById("userIntent").value;
 
-  // ================= VALIDATIONS =================
-
   if (!title) {
     alert("Ajoute un titre");
     return;
@@ -323,15 +329,11 @@ async function addAd() {
     return;
   }
 
-  // ================= PHOTO =================
-
   const file =
     document.getElementById("photoFile").files[0];
 
   let photoUrl = "";
 
-  // IMPORTANT :
-  // garder ancienne photo pendant édition
   if (window.editingAdId) {
 
     const oldAd =
@@ -340,12 +342,9 @@ async function addAd() {
     photoUrl = oldAd?.photo || "";
   }
 
-  // nouvelle photo
   if (file) {
     photoUrl = await uploadPhoto(file);
   }
-
-  // ================= AD OBJECT =================
 
   const ad = {
 
@@ -366,10 +365,7 @@ async function addAd() {
 
   let error;
 
-  // ================= UPDATE =================
   if (window.editingAdId !== null) {
-
-    console.log("UPDATE MODE", window.editingAdId);
 
     ({ error } =
       await supabaseClient
@@ -378,9 +374,6 @@ async function addAd() {
         .eq("id", window.editingAdId));
 
   } else {
-
-    // ================= INSERT =================
-    console.log("INSERT MODE");
 
     ({ error } =
       await supabaseClient
@@ -505,32 +498,7 @@ function resetForm() {
 }
 
 // ================= MATCH SYSTEM =================
-function isMatch(a, b) {
-
-  // pas soi-même
-  if (a.user_id === b.user_id)
-    return false;
-
-  // sécurité
-  if (!a.side || !b.side)
-    return false;
-
-  // gauche / droite
-  const oppositeSide =
-
-    (a.side === "gauche" && b.side === "droite") ||
-
-    (a.side === "droite" && b.side === "gauche");
-
-  // pointure proche
-  const sameSize =
-    Math.abs(Number(a.size) - Number(b.size)) <= 1;
-
-  return oppositeSide && sameSize;
-}
-
-// ================= LOAD MATCHES =================
-function loadMatches() {
+async function loadMatches() {
 
   const container =
     document.getElementById("matchContainer");
@@ -542,54 +510,71 @@ function loadMatches() {
     return;
   }
 
-  const myAds =
-    ads.filter(ad =>
-      ad.user_id === currentUser.id
-    );
+  const { data: profile } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq("id", currentUser.id)
+      .single();
+
+  if (!profile) {
+    container.innerHTML =
+      "<p>Aucun match pour le moment 💜</p>";
+    return;
+  }
 
   let matchesHTML = "";
 
-  myAds.forEach(myAd => {
+  ads.forEach(ad => {
 
-    ads.forEach(otherAd => {
+    if (ad.user_id === currentUser.id)
+      return;
 
-      if (isMatch(myAd, otherAd)) {
+    const oppositeSide =
 
-        matchesHTML += `
-          <div class="ad">
+      (profile.side === "gauche" && ad.side === "droite") ||
 
-            <h3>💜 Match trouvé !</h3>
+      (profile.side === "droite" && ad.side === "gauche");
 
-            <b>${otherAd.title}</b><br>
+    const sameSize =
+      Math.abs(Number(profile.size) - Number(ad.size)) <= 1;
 
-            👟 ${otherAd.size}<br>
+    if (oppositeSide && sameSize) {
 
-            📍 ${otherAd.city || ""}<br>
+      matchesHTML += `
+        <div class="ad">
 
-            👣 ${otherAd.side}<br>
+          <h3>💜 Match trouvé !</h3>
 
-            ${
-              otherAd.photo
-                ? `
-                  <img
-                    src="${otherAd.photo}"
-                    width="150"
-                    style="border-radius:10px;margin-top:10px;"
-                  >
-                `
-                : ""
-            }
+          <b>${ad.title}</b><br>
 
-            <br><br>
+          👟 ${ad.size}<br>
 
-            <button onclick="contactUser('${otherAd.user_name}')">
-              💬 Contacter
-            </button>
+          📍 ${ad.city || ""}<br>
 
-          </div>
-        `;
-      }
-    });
+          👣 ${ad.side}<br>
+
+          ${
+            ad.photo
+              ? `
+                <img
+                  src="${ad.photo}"
+                  width="150"
+                  style="border-radius:10px;margin-top:10px;"
+                >
+              `
+              : ""
+          }
+
+          <br><br>
+
+          <button onclick="openChat('${ad.user_id}')">
+            💬 Contacter
+          </button>
+
+        </div>
+      `;
+    }
   });
 
   if (matchesHTML) {
@@ -603,12 +588,105 @@ function loadMatches() {
   }
 }
 
-// ================= CONTACT =================
-function contactUser(email) {
+// ================= CHAT =================
+async function openChat(userId) {
 
-  alert(
-    "💬 Contact : " + email
-  );
+  if (!currentUser) {
+    alert("Connecte-toi");
+    return;
+  }
+
+  currentChatUser = userId;
+
+  loadMessages();
+
+  showToast("💬 Chat ouvert");
+}
+
+async function sendMessage() {
+
+  if (!currentUser || !currentChatUser)
+    return;
+
+  const input =
+    document.getElementById("chatMessage");
+
+  const text =
+    input.value.trim();
+
+  if (!text) return;
+
+  const { error } =
+    await supabaseClient
+      .from("messages")
+      .insert([{
+        sender_id: currentUser.id,
+        receiver_id: currentChatUser,
+        message: text
+      }]);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  input.value = "";
+
+  loadMessages();
+}
+
+async function loadMessages() {
+
+  if (!currentUser || !currentChatUser)
+    return;
+
+  const { data, error } =
+    await supabaseClient
+      .from("messages")
+      .select("*")
+      .or(
+        `and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentChatUser}),and(sender_id.eq.${currentChatUser},receiver_id.eq.${currentUser.id})`
+      )
+      .order("id");
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  const chatBox =
+    document.getElementById("chatBox");
+
+  if (!chatBox) return;
+
+  chatBox.innerHTML = data.map(msg => {
+
+    const mine =
+      msg.sender_id === currentUser.id;
+
+    return `
+      <div style="
+        margin:10px 0;
+        text-align:${mine ? "right" : "left"};
+      ">
+
+        <span style="
+          display:inline-block;
+          background:${mine ? "#6a0dad" : "#ddd"};
+          color:${mine ? "white" : "black"};
+          padding:10px;
+          border-radius:12px;
+          max-width:70%;
+        ">
+          ${msg.message}
+        </span>
+
+      </div>
+    `;
+  }).join("");
+
+  chatBox.scrollTop =
+    chatBox.scrollHeight;
 }
 
 // ================= LIKE / DISLIKE =================
