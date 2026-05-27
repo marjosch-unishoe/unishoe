@@ -10,7 +10,6 @@ const supabaseClient = supabase.createClient(
 let currentUser = null;
 let ads = [];
 let currentChatUser = null;
-
 window.editingAdId = null;
 
 // ================= USER INTENT UI =================
@@ -113,7 +112,6 @@ async function loginUser() {
   currentUser = data.user;
 
   updateAuthUI();
-
   await loadAds();
 
   showToast("✅ Connecté");
@@ -148,7 +146,6 @@ async function logoutUser() {
   currentUser = null;
 
   updateAuthUI();
-
   loadAds();
 
   showToast("👋 Déconnecté");
@@ -209,7 +206,6 @@ async function loadAds() {
   ads = data || [];
 
   displayAds();
-
   loadMatches();
 }
 
@@ -225,10 +221,21 @@ function displayAds() {
       currentUser &&
       currentUser.id === ad.user_id;
 
+    const typeLabel =
+      ad.type === "offer"
+        ? "👟 Chaussure proposée"
+        : ad.type === "exchange"
+        ? "🔁 Échange proposé"
+        : ad.type === "share"
+        ? "🤝 Achat partagé"
+        : "❓ Non précisé";
+
     return `
       <div class="ad">
 
         <b>${ad.title || ""}</b><br>
+
+        📌 ${typeLabel}<br>
 
         📝 ${ad.description || ""}<br>
 
@@ -242,41 +249,23 @@ function displayAds() {
 
         ${
           ad.photo
-            ? `
-              <img
-                src="${ad.photo}"
-                width="150"
-                style="border-radius:10px;margin-top:10px;"
-              >
-            `
+            ? `<img src="${ad.photo}" width="150" style="border-radius:10px;margin-top:10px;">`
             : ""
         }
 
         <br><br>
 
-        <button onclick="likeAd()">
-          ❤️ Intéressant
-        </button>
-
-        <button onclick="dislikeAd()">
-          ❌ Pas intéressé
-        </button>
+        <button onclick="likeAd()">❤️ Intéressant</button>
+        <button onclick="dislikeAd()">❌ Pas intéressé</button>
 
         ${
           isOwner
             ? `
-              <button onclick="editAd(${ad.id})">
-                ✏️ Modifier
-              </button>
-
-              <button onclick="deleteAd(${ad.id})">
-                🗑 Supprimer
-              </button>
+              <button onclick="editAd(${ad.id})">✏️ Modifier</button>
+              <button onclick="deleteAd(${ad.id})">🗑 Supprimer</button>
             `
             : `
-              <button onclick="openChat('${ad.user_id}')">
-                💬 Contacter
-              </button>
+              <button onclick="openChat('${ad.user_id}')">💬 Contacter</button>
             `
         }
 
@@ -288,10 +277,8 @@ function displayAds() {
 // ================= ADD / UPDATE AD =================
 async function addAd() {
 
-  if (!currentUser) {
-    alert("Connecte-toi");
-    return;
-  }
+  if (!currentUser)
+    return alert("Connecte-toi");
 
   const title =
     document.getElementById("title").value.trim();
@@ -311,23 +298,11 @@ async function addAd() {
   const condition =
     document.getElementById("condition").value;
 
-  const intent =
-    document.getElementById("userIntent").value;
+  const type =
+    document.getElementById("adType").value;
 
-  if (!title) {
-    alert("Ajoute un titre");
-    return;
-  }
-
-  if (!size) {
-    alert("Ajoute une pointure");
-    return;
-  }
-
-  if (!side) {
-    alert("Choisis gauche ou droite");
-    return;
-  }
+  if (!title || !size || !side)
+    return alert("Champs obligatoires manquants");
 
   const file =
     document.getElementById("photoFile").files[0];
@@ -335,10 +310,7 @@ async function addAd() {
   let photoUrl = "";
 
   if (window.editingAdId) {
-
-    const oldAd =
-      ads.find(a => a.id === window.editingAdId);
-
+    const oldAd = ads.find(a => a.id === window.editingAdId);
     photoUrl = oldAd?.photo || "";
   }
 
@@ -347,19 +319,15 @@ async function addAd() {
   }
 
   const ad = {
-
     title,
     size,
     city,
     description,
     side,
     condition,
-    intent,
-
+    type,
     photo: photoUrl,
-
     user_id: currentUser.id,
-
     user_name: currentUser.email
   };
 
@@ -382,98 +350,46 @@ async function addAd() {
   }
 
   if (error) {
-    console.error(error);
     alert(error.message);
     return;
   }
 
   resetForm();
-
   showToast("💜 Sauvegardé");
-
   await loadAds();
 }
 
 // ================= EDIT =================
 function editAd(id) {
 
-  const ad =
-    ads.find(a => a.id === id);
-
+  const ad = ads.find(a => a.id === id);
   if (!ad) return;
 
-  document.getElementById("title").value =
-    ad.title || "";
-
-  document.getElementById("size").value =
-    ad.size || "";
-
-  document.getElementById("city").value =
-    ad.city || "";
-
-  document.getElementById("description").value =
-    ad.description || "";
-
-  document.getElementById("adShoeSide").value =
-    ad.side || "";
-
-  document.getElementById("condition").value =
-    ad.condition || "";
-
-  document.getElementById("userIntent").value =
-    ad.intent || "";
+  document.getElementById("title").value = ad.title || "";
+  document.getElementById("size").value = ad.size || "";
+  document.getElementById("city").value = ad.city || "";
+  document.getElementById("description").value = ad.description || "";
+  document.getElementById("adShoeSide").value = ad.side || "";
+  document.getElementById("condition").value = ad.condition || "";
+  document.getElementById("adType").value = ad.type || "";
 
   window.editingAdId = id;
 
-  document.querySelector("button[onclick='addAd()']")
-    .textContent = "💾 Mettre à jour";
-
-  const cancelBtn =
-    document.getElementById("cancelBtn");
-
-  if (cancelBtn) {
-    cancelBtn.style.display = "inline-block";
-  }
-
   showToast("✏️ Mode édition");
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
 }
 
 // ================= DELETE =================
 async function deleteAd(id) {
 
-  const confirmDelete =
-    confirm("Supprimer cette annonce ?");
+  const ok = confirm("Supprimer ?");
+  if (!ok) return;
 
-  if (!confirmDelete) return;
-
-  const { error } =
-    await supabaseClient
-      .from("ads")
-      .delete()
-      .eq("id", id);
-
-  if (error) {
-    console.error(error);
-    alert(error.message);
-    return;
-  }
-
-  showToast("🗑 Annonce supprimée");
+  await supabaseClient.from("ads").delete().eq("id", id);
 
   await loadAds();
 }
 
-// ================= CANCEL EDIT =================
-function cancelEdit() {
-  resetForm();
-}
-
-// ================= RESET FORM =================
+// ================= RESET =================
 function resetForm() {
 
   window.editingAdId = null;
@@ -484,17 +400,7 @@ function resetForm() {
   document.getElementById("description").value = "";
   document.getElementById("adShoeSide").value = "";
   document.getElementById("condition").value = "";
-  document.getElementById("photoFile").value = "";
-
-  document.querySelector("button[onclick='addAd()']")
-    .textContent = "📢 Publier";
-
-  const cancelBtn =
-    document.getElementById("cancelBtn");
-
-  if (cancelBtn) {
-    cancelBtn.style.display = "none";
-  }
+  document.getElementById("adType").value = "";
 }
 
 // ================= MATCH SYSTEM =================
@@ -503,12 +409,7 @@ async function loadMatches() {
   const container =
     document.getElementById("matchContainer");
 
-  if (!container) return;
-
-  if (!currentUser) {
-    container.innerHTML = "";
-    return;
-  }
+  if (!currentUser) return;
 
   const { data: profile } =
     await supabaseClient
@@ -517,233 +418,124 @@ async function loadMatches() {
       .eq("id", currentUser.id)
       .single();
 
-  if (!profile) {
-    container.innerHTML =
-      "<p>Aucun match pour le moment 💜</p>";
-    return;
-  }
+  if (!profile) return;
 
-  let matchesHTML = "";
+  let html = "";
 
   ads.forEach(ad => {
 
-    if (ad.user_id === currentUser.id)
-      return;
+    if (ad.user_id === currentUser.id) return;
 
-    const oppositeSide =
-
+    const opposite =
       (profile.side === "gauche" && ad.side === "droite") ||
-
       (profile.side === "droite" && ad.side === "gauche");
 
     const sameSize =
       Math.abs(Number(profile.size) - Number(ad.size)) <= 1;
 
-    if (oppositeSide && sameSize) {
+    if (opposite && sameSize) {
 
-      matchesHTML += `
+      html += `
         <div class="ad">
 
-          <h3>💜 Match trouvé !</h3>
+          <h3>💜 Match</h3>
 
           <b>${ad.title}</b><br>
-
+          📌 ${ad.type}<br>
           👟 ${ad.size}<br>
-
-          📍 ${ad.city || ""}<br>
-
           👣 ${ad.side}<br>
 
-          ${
-            ad.photo
-              ? `
-                <img
-                  src="${ad.photo}"
-                  width="150"
-                  style="border-radius:10px;margin-top:10px;"
-                >
-              `
-              : ""
-          }
-
-          <br><br>
-
-          <button onclick="openChat('${ad.user_id}')">
-            💬 Contacter
-          </button>
+          <button onclick="openChat('${ad.user_id}')">💬 Chat</button>
 
         </div>
       `;
     }
   });
 
-  if (matchesHTML) {
-
-    container.innerHTML = matchesHTML;
-
-  } else {
-
-    container.innerHTML =
-      "<p>Aucun match pour le moment 💜</p>";
-  }
+  container.innerHTML = html || "<p>Aucun match 💜</p>";
 }
 
 // ================= CHAT =================
 async function openChat(userId) {
 
-  if (!currentUser) {
-    alert("Connecte-toi");
-    return;
-  }
-
   currentChatUser = userId;
 
   loadMessages();
-
-  showToast("💬 Chat ouvert");
 }
 
 async function sendMessage() {
 
-  if (!currentUser || !currentChatUser)
-    return;
+  const input = document.getElementById("chatMessage");
+  const text = input.value.trim();
+  if (!text || !currentChatUser) return;
 
-  const input =
-    document.getElementById("chatMessage");
-
-  const text =
-    input.value.trim();
-
-  if (!text) return;
-
-  const { error } =
-    await supabaseClient
-      .from("messages")
-      .insert([{
-        sender_id: currentUser.id,
-        receiver_id: currentChatUser,
-        message: text
-      }]);
-
-  if (error) {
-    console.error(error);
-    return;
-  }
+  await supabaseClient.from("messages").insert([{
+    sender_id: currentUser.id,
+    receiver_id: currentChatUser,
+    message: text
+  }]);
 
   input.value = "";
-
   loadMessages();
 }
 
 async function loadMessages() {
 
-  if (!currentUser || !currentChatUser)
-    return;
+  const { data } = await supabaseClient
+    .from("messages")
+    .select("*")
+    .or(
+      `and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentChatUser}),and(sender_id.eq.${currentChatUser},receiver_id.eq.${currentUser.id})`
+    )
+    .order("id");
 
-  const { data, error } =
-    await supabaseClient
-      .from("messages")
-      .select("*")
-      .or(
-        `and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentChatUser}),and(sender_id.eq.${currentChatUser},receiver_id.eq.${currentUser.id})`
-      )
-      .order("id");
+  const box = document.getElementById("chatBox");
+  if (!box) return;
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+  box.innerHTML = (data || []).map(m => `
+    <div style="text-align:${m.sender_id === currentUser.id ? "right" : "left"}">
+      <span style="display:inline-block;padding:8px;border-radius:10px;background:${m.sender_id === currentUser.id ? "#6a0dad" : "#ddd"};color:${m.sender_id === currentUser.id ? "white" : "black"}">
+        ${m.message}
+      </span>
+    </div>
+  `).join("");
 
-  const chatBox =
-    document.getElementById("chatBox");
-
-  if (!chatBox) return;
-
-  chatBox.innerHTML = data.map(msg => {
-
-    const mine =
-      msg.sender_id === currentUser.id;
-
-    return `
-      <div style="
-        margin:10px 0;
-        text-align:${mine ? "right" : "left"};
-      ">
-
-        <span style="
-          display:inline-block;
-          background:${mine ? "#6a0dad" : "#ddd"};
-          color:${mine ? "white" : "black"};
-          padding:10px;
-          border-radius:12px;
-          max-width:70%;
-        ">
-          ${msg.message}
-        </span>
-
-      </div>
-    `;
-  }).join("");
-
-  chatBox.scrollTop =
-    chatBox.scrollHeight;
+  box.scrollTop = box.scrollHeight;
 }
 
-// ================= LIKE / DISLIKE =================
-function likeAd() {
-  showToast("❤️ Intéressant !");
+// ================= UI =================
+function likeAd() { showToast("❤️ Intéressant"); }
+function dislikeAd() { showToast("❌ Pas intéressé"); }
+
+function showToast(msg) {
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.position = "fixed";
+  t.style.bottom = "20px";
+  t.style.left = "50%";
+  t.style.transform = "translateX(-50%)";
+  t.style.background = "#6a0dad";
+  t.style.color = "white";
+  t.style.padding = "10px 16px";
+  t.style.borderRadius = "12px";
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
 }
 
-function dislikeAd() {
-  showToast("❌ Pas intéressé !");
-}
-
-// ================= PHOTO UPLOAD =================
+// ================= STORAGE =================
 async function uploadPhoto(file) {
 
-  const fileName =
-    Date.now() + "_" + file.name;
+  const name = Date.now() + "_" + file.name;
 
-  const { data, error } =
-    await supabaseClient.storage
-      .from("shoes")
-      .upload(fileName, file);
+  const { data, error } = await supabaseClient.storage
+    .from("shoes")
+    .upload(name, file);
 
-  if (error) {
-    console.error(error);
-    return "";
-  }
+  if (error) return "";
 
-  const { data: url } =
-    supabaseClient.storage
-      .from("shoes")
-      .getPublicUrl(data.path);
+  const { data: url } = supabaseClient.storage
+    .from("shoes")
+    .getPublicUrl(data.path);
 
   return url.publicUrl;
-}
-
-// ================= TOAST =================
-function showToast(message) {
-
-  const toast =
-    document.createElement("div");
-
-  toast.textContent = message;
-
-  toast.style.position = "fixed";
-  toast.style.bottom = "20px";
-  toast.style.left = "50%";
-  toast.style.transform = "translateX(-50%)";
-  toast.style.background = "#6a0dad";
-  toast.style.color = "white";
-  toast.style.padding = "12px 18px";
-  toast.style.borderRadius = "12px";
-  toast.style.zIndex = "9999";
-  toast.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
-
-  document.body.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 2000);
 }
