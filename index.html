@@ -57,7 +57,6 @@
       <option value="share">Partager un achat</option>
     </select>
 
-    <!-- IMPORTANT -->
     <div id="matchOptions"></div>
 
     <button onclick="saveProfile()">Continuer</button>
@@ -88,18 +87,19 @@
     </div>
   </section>
 
-  <!-- FORM ANNONCE -->
+  <!-- FORM -->
   <section class="form">
     <h2>📢 Publier une chaussure</h2>
 
     <input id="title" placeholder="Marque / modèle">
     <input id="size" placeholder="Pointure">
+
     <textarea id="description" placeholder="Description de la chaussure"></textarea>
+
     <input id="city" placeholder="Ville">
 
     <input type="file" id="photoFile" accept="image/*">
 
-    <!-- FIX IMPORTANT -->
     <select id="adShoeSide" required>
       <option value="">Côté de la chaussure</option>
       <option value="gauche">Gauche</option>
@@ -114,23 +114,30 @@
       <option value="use">Usé</option>
     </select>
 
-    <button onclick="addAd()">Publier</button>
+    <button onclick="addAd()">📢 Publier</button>
+
+    <!-- IMPORTANT -->
+    <button id="cancelBtn"
+            onclick="cancelEdit()"
+            style="display:none;">
+      ❌ Annuler
+    </button>
+  </section>
+
+  <!-- MATCHS -->
+  <section>
+    <h2>💜 Tes matchs</h2>
+    <div id="matchContainer"></div>
   </section>
 
   <!-- ADS -->
   <section>
     <h2>📦 Annonces</h2>
-
-    <!-- MATCHS -->
-    <div id="matchContainer"></div>
-
-    <!-- ADS -->
     <div id="ads"></div>
   </section>
 
 </div>
 
-<!-- FIX IMPORTANT : defer -->
 <script src="script.js" defer></script>
 
 </body>

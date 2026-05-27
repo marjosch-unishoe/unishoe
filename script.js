@@ -13,6 +13,7 @@ window.editingAdId = null;
 
 // ================= USER INTENT UI =================
 document.getElementById("userIntent").addEventListener("change", function () {
+
   const container = document.getElementById("matchOptions");
   const value = this.value;
 
@@ -20,307 +21,597 @@ document.getElementById("userIntent").addEventListener("change", function () {
 
   if (value === "match") {
     container.innerHTML = `
-      <label><input type="radio" name="matchSide" value="gauche"> Je cherche une chaussure gauche</label><br>
-      <label><input type="radio" name="matchSide" value="droite"> Je cherche une chaussure droite</label>
+      <label>
+        <input type="radio" name="matchSide" value="gauche">
+        Je cherche une chaussure gauche
+      </label><br>
+
+      <label>
+        <input type="radio" name="matchSide" value="droite">
+        Je cherche une chaussure droite
+      </label>
     `;
   }
 
   if (value === "exchange") {
     container.innerHTML = `
-      <label><input type="radio" name="exchange" value="right_to_left"> J’ai une chaussure droite à échanger contre une gauche</label><br>
-      <label><input type="radio" name="exchange" value="left_to_right"> J’ai une chaussure gauche à échanger contre une droite</label>
+      <label>
+        <input type="radio" name="exchange" value="right_to_left">
+        J’ai une chaussure droite à échanger contre une gauche
+      </label><br>
+
+      <label>
+        <input type="radio" name="exchange" value="left_to_right">
+        J’ai une chaussure gauche à échanger contre une droite
+      </label>
     `;
   }
 
   if (value === "share") {
     container.innerHTML = `
-      <label><input type="radio" name="share" value="gauche"> J’ai besoin du côté gauche</label><br>
-      <label><input type="radio" name="share" value="droite"> J’ai besoin du côté droit</label>
+      <label>
+        <input type="radio" name="share" value="gauche">
+        J’ai besoin du côté gauche
+      </label><br>
+
+      <label>
+        <input type="radio" name="share" value="droite">
+        J’ai besoin du côté droit
+      </label>
     `;
   }
 });
 
 // ================= AUTH =================
 async function getUser() {
-  const { data } = await supabaseClient.auth.getUser();
+
+  const { data } =
+    await supabaseClient.auth.getUser();
+
   currentUser = data?.user || null;
 
   updateAuthUI();
-  loadAds();
+
+  await loadAds();
 }
+
 getUser();
 
 function updateAuthUI() {
-  const w = document.getElementById("welcome");
-  if (!w) return;
 
-  w.textContent = currentUser
+  const welcome =
+    document.getElementById("welcome");
+
+  if (!welcome) return;
+
+  welcome.textContent = currentUser
     ? `Connecté : ${currentUser.email}`
     : "Non connecté";
 }
 
 async function loginUser() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
+  const email =
+    document.getElementById("email").value;
 
-  if (error) return alert(error.message);
+  const password =
+    document.getElementById("password").value;
 
-  currentUser = data?.user || null;
+  const { data, error } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
 
-  await loadProfile();
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  currentUser = data.user;
+
   updateAuthUI();
-  loadAds();
+
+  await loadAds();
+
+  showToast("✅ Connecté");
 }
 
 async function registerUser() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
 
-  const { error } = await supabaseClient.auth.signUp({
-    email,
-    password
-  });
+  const email =
+    document.getElementById("email").value;
 
-  if (error) return alert(error.message);
+  const password =
+    document.getElementById("password").value;
+
+  const { error } =
+    await supabaseClient.auth.signUp({
+      email,
+      password
+    });
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
   alert("Compte créé ✔");
 }
 
 async function logoutUser() {
+
   await supabaseClient.auth.signOut();
+
   currentUser = null;
+
   updateAuthUI();
+
+  loadAds();
+
+  showToast("👋 Déconnecté");
 }
 
 // ================= PROFILE =================
 async function saveProfile() {
-  if (!currentUser) return alert("Connecte-toi");
 
-  const intent = document.getElementById("userIntent").value;
+  if (!currentUser)
+    return alert("Connecte-toi");
+
+  const intent =
+    document.getElementById("userIntent").value;
 
   const selectedSide =
     document.querySelector('input[name="matchSide"]:checked')?.value ||
     document.querySelector('input[name="exchange"]:checked')?.value ||
     document.querySelector('input[name="share"]:checked')?.value;
 
-  const { error } = await supabaseClient
-    .from("profiles")
-    .upsert({
-      id: currentUser.id,
-      intent,
-      side: selectedSide
-    });
+  const { error } =
+    await supabaseClient
+      .from("profiles")
+      .upsert({
+        id: currentUser.id,
+        intent,
+        side: selectedSide
+      });
 
-  if (error) return alert(error.message);
-
-  document.getElementById("profileStatus").textContent =
-    "✅ Profil enregistré";
-}
-
-async function loadProfile() {
-  const { data } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", currentUser.id)
-    .single();
-
-  if (data) {
-    document.getElementById("userIntent").value = data.intent || "";
-    console.log("Profil chargé", data);
+  if (error) {
+    alert(error.message);
+    return;
   }
+
+  document.getElementById("profileStatus")
+    .textContent = "✅ Profil enregistré";
 }
 
-// ================= ADS =================
+// ================= LOAD ADS =================
 async function loadAds() {
-  const { data } = await supabaseClient
-    .from("ads")
-    .select("*")
-    .order("id", { ascending: false });
+
+  const { data, error } =
+    await supabaseClient
+      .from("ads")
+      .select("*")
+      .order("id", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   ads = data || [];
+
   displayAds();
+
+  loadMatches();
 }
 
+// ================= DISPLAY ADS =================
 function displayAds() {
-  const container = document.getElementById("ads");
 
-  container.innerHTML = ads.map(ad => `
-    <div class="ad">
+  const container =
+    document.getElementById("ads");
 
-      <b>${ad.title}</b><br>
-      📝 ${ad.description || ""}<br>
-      📍 ${ad.city || ""} | 👟 ${ad.size}<br>
+  container.innerHTML = ads.map(ad => {
 
-      ${ad.photo ? `<img src="${ad.photo}" width="150">` : ""}
+    const isOwner =
+      currentUser &&
+      currentUser.id === ad.user_id;
 
-      <br><br>
+    return `
+      <div class="ad">
 
-      <button onclick="likeAd()">❤️ Intéressant</button>
-      <button onclick="dislikeAd()">❌ Pas intéressé</button>
-      <button onclick="editAd(${ad.id})">✏️ Modifier</button>
+        <b>${ad.title || ""}</b><br>
 
-    </div>
-  `).join("");
+        📝 ${ad.description || ""}<br>
+
+        📍 ${ad.city || ""}<br>
+
+        👟 Pointure : ${ad.size || ""}<br>
+
+        👣 ${ad.side || "Non précisé"}<br>
+
+        🧼 ${ad.condition || "Non précisé"}<br>
+
+        ${
+          ad.photo
+            ? `
+              <img
+                src="${ad.photo}"
+                width="150"
+                style="border-radius:10px;margin-top:10px;"
+              >
+            `
+            : ""
+        }
+
+        <br><br>
+
+        <button onclick="likeAd()">
+          ❤️ Intéressant
+        </button>
+
+        <button onclick="dislikeAd()">
+          ❌ Pas intéressé
+        </button>
+
+        ${
+          isOwner
+            ? `
+              <button onclick="editAd(${ad.id})">
+                ✏️ Modifier
+              </button>
+
+              <button onclick="deleteAd(${ad.id})">
+                🗑 Supprimer
+              </button>
+            `
+            : `
+              <button onclick="contactUser('${ad.user_name}')">
+                💬 Contacter
+              </button>
+            `
+        }
+
+      </div>
+    `;
+  }).join("");
 }
 
-// ================= EDIT AD =================
+// ================= ADD / UPDATE AD =================
+async function addAd() {
+
+  if (!currentUser) {
+    alert("Connecte-toi");
+    return;
+  }
+
+  const title =
+    document.getElementById("title").value.trim();
+
+  const size =
+    document.getElementById("size").value.trim();
+
+  const city =
+    document.getElementById("city").value.trim();
+
+  const description =
+    document.getElementById("description").value.trim();
+
+  const side =
+    document.getElementById("adShoeSide").value;
+
+  const condition =
+    document.getElementById("condition").value;
+
+  const intent =
+    document.getElementById("userIntent").value;
+
+  // ================= VALIDATIONS =================
+
+  if (!title) {
+    alert("Ajoute un titre");
+    return;
+  }
+
+  if (!size) {
+    alert("Ajoute une pointure");
+    return;
+  }
+
+  if (!side) {
+    alert("Choisis gauche ou droite");
+    return;
+  }
+
+  // ================= PHOTO =================
+
+  const file =
+    document.getElementById("photoFile").files[0];
+
+  let photoUrl = "";
+
+  // IMPORTANT :
+  // garder ancienne photo pendant édition
+  if (window.editingAdId) {
+
+    const oldAd =
+      ads.find(a => a.id === window.editingAdId);
+
+    photoUrl = oldAd?.photo || "";
+  }
+
+  // nouvelle photo
+  if (file) {
+    photoUrl = await uploadPhoto(file);
+  }
+
+  // ================= AD OBJECT =================
+
+  const ad = {
+
+    title,
+    size,
+    city,
+    description,
+    side,
+    condition,
+    intent,
+
+    photo: photoUrl,
+
+    user_id: currentUser.id,
+
+    user_name: currentUser.email
+  };
+
+  let error;
+
+  // ================= UPDATE =================
+  if (window.editingAdId !== null) {
+
+    console.log("UPDATE MODE", window.editingAdId);
+
+    ({ error } =
+      await supabaseClient
+        .from("ads")
+        .update(ad)
+        .eq("id", window.editingAdId));
+
+  } else {
+
+    // ================= INSERT =================
+    console.log("INSERT MODE");
+
+    ({ error } =
+      await supabaseClient
+        .from("ads")
+        .insert([ad]));
+  }
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  resetForm();
+
+  showToast("💜 Sauvegardé");
+
+  await loadAds();
+}
+
+// ================= EDIT =================
 function editAd(id) {
-  const ad = ads.find(a => a.id === id);
+
+  const ad =
+    ads.find(a => a.id === id);
+
   if (!ad) return;
 
-  document.getElementById("title").value = ad.title || "";
-  document.getElementById("size").value = ad.size || "";
-  document.getElementById("city").value = ad.city || "";
-  document.getElementById("description").value = ad.description || "";
-  document.getElementById("userIntent").value = ad.intent || "";
-  document.getElementById("adShoeSide").value = ad.side || "";
+  document.getElementById("title").value =
+    ad.title || "";
+
+  document.getElementById("size").value =
+    ad.size || "";
+
+  document.getElementById("city").value =
+    ad.city || "";
+
+  document.getElementById("description").value =
+    ad.description || "";
+
+  document.getElementById("adShoeSide").value =
+    ad.side || "";
+
+  document.getElementById("condition").value =
+    ad.condition || "";
+
+  document.getElementById("userIntent").value =
+    ad.intent || "";
 
   window.editingAdId = id;
 
-  document.querySelector("button[onclick='addAd()']").textContent =
-    "💾 Mettre à jour";
+  document.querySelector("button[onclick='addAd()']")
+    .textContent = "💾 Mettre à jour";
 
-  document.getElementById("cancelBtn").style.display = "inline-block";
+  const cancelBtn =
+    document.getElementById("cancelBtn");
 
-  showToast("✏️ Mode édition activé");
+  if (cancelBtn) {
+    cancelBtn.style.display = "inline-block";
+  }
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  showToast("✏️ Mode édition");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+// ================= DELETE =================
+async function deleteAd(id) {
+
+  const confirmDelete =
+    confirm("Supprimer cette annonce ?");
+
+  if (!confirmDelete) return;
+
+  const { error } =
+    await supabaseClient
+      .from("ads")
+      .delete()
+      .eq("id", id);
+
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
+
+  showToast("🗑 Annonce supprimée");
+
+  await loadAds();
 }
 
 // ================= CANCEL EDIT =================
 function cancelEdit() {
+  resetForm();
+}
+
+// ================= RESET FORM =================
+function resetForm() {
+
   window.editingAdId = null;
 
   document.getElementById("title").value = "";
   document.getElementById("size").value = "";
   document.getElementById("city").value = "";
   document.getElementById("description").value = "";
-  document.getElementById("userIntent").value = "";
   document.getElementById("adShoeSide").value = "";
+  document.getElementById("condition").value = "";
+  document.getElementById("photoFile").value = "";
 
-  document.getElementById("profileStatus").textContent = "";
+  document.querySelector("button[onclick='addAd()']")
+    .textContent = "📢 Publier";
 
-  document.querySelector("button[onclick='addAd()']").textContent =
-    "📢 Publier";
+  const cancelBtn =
+    document.getElementById("cancelBtn");
 
-  document.getElementById("cancelBtn").style.display = "none";
-
-  showToast("✖️ Mode édition annulé");
+  if (cancelBtn) {
+    cancelBtn.style.display = "none";
+  }
 }
 
-// ================= ADD AD =================
-async function addAd() {
-  if (!currentUser) return alert("Connecte-toi");
+// ================= MATCH SYSTEM =================
+function isMatch(a, b) {
 
-  const file = document.getElementById("photoFile").files[0];
-  let photoUrl = "";
+  // pas soi-même
+  if (a.user_id === b.user_id)
+    return false;
 
-  if (file) photoUrl = await uploadPhoto(file);
+  // sécurité
+  if (!a.side || !b.side)
+    return false;
 
-  const intent = document.getElementById("userIntent").value;
+  // gauche / droite
+  const oppositeSide =
 
-  const side =
-    document.getElementById("adShoeSide")?.value ||
-    document.querySelector('input[name="matchSide"]:checked')?.value ||
-    document.querySelector('input[name="exchange"]:checked')?.value ||
-    document.querySelector('input[name="share"]:checked')?.value;
+    (a.side === "gauche" && b.side === "droite") ||
 
-  if (!side) {
-    alert("Choisis un côté de chaussure");
+    (a.side === "droite" && b.side === "gauche");
+
+  // pointure proche
+  const sameSize =
+    Math.abs(Number(a.size) - Number(b.size)) <= 1;
+
+  return oppositeSide && sameSize;
+}
+
+// ================= LOAD MATCHES =================
+function loadMatches() {
+
+  const container =
+    document.getElementById("matchContainer");
+
+  if (!container) return;
+
+  if (!currentUser) {
+    container.innerHTML = "";
     return;
   }
 
-  const ad = {
-    title: document.getElementById("title").value,
-    size: document.getElementById("size").value,
-    condition: document.getElementById("condition")?.value,
-    city: document.getElementById("city").value,
-    description: document.getElementById("description").value,
-    user_id: currentUser.id,
-    user_name: currentUser.email,
-    photo: photoUrl,
-    intent,
-    side
-  };
+  const myAds =
+    ads.filter(ad =>
+      ad.user_id === currentUser.id
+    );
 
-  let query;
+  let matchesHTML = "";
 
-  if (window.editingAdId) {
-    query = supabaseClient
-      .from("ads")
-      .update(ad)
-      .eq("id", window.editingAdId);
+  myAds.forEach(myAd => {
+
+    ads.forEach(otherAd => {
+
+      if (isMatch(myAd, otherAd)) {
+
+        matchesHTML += `
+          <div class="ad">
+
+            <h3>💜 Match trouvé !</h3>
+
+            <b>${otherAd.title}</b><br>
+
+            👟 ${otherAd.size}<br>
+
+            📍 ${otherAd.city || ""}<br>
+
+            👣 ${otherAd.side}<br>
+
+            ${
+              otherAd.photo
+                ? `
+                  <img
+                    src="${otherAd.photo}"
+                    width="150"
+                    style="border-radius:10px;margin-top:10px;"
+                  >
+                `
+                : ""
+            }
+
+            <br><br>
+
+            <button onclick="contactUser('${otherAd.user_name}')">
+              💬 Contacter
+            </button>
+
+          </div>
+        `;
+      }
+    });
+  });
+
+  if (matchesHTML) {
+
+    container.innerHTML = matchesHTML;
+
   } else {
-    query = supabaseClient
-      .from("ads")
-      .insert([ad]);
+
+    container.innerHTML =
+      "<p>Aucun match pour le moment 💜</p>";
   }
-
-  const { error } = await query;
-
-  if (error) {
-    console.error(error);
-    return alert(error.message);
-  }
-
-  window.editingAdId = null;
-
-  document.querySelector("button[onclick='addAd()']").textContent =
-    "📢 Publier";
-
-  document.getElementById("cancelBtn").style.display = "none";
-
-  showToast("💜 sauvegardé !");
-  await loadMatches();
 }
 
-// ================= UPLOAD =================
-async function uploadPhoto(file) {
-  const fileName = Date.now() + "_" + file.name;
+// ================= CONTACT =================
+function contactUser(email) {
 
-  const { data, error } = await supabaseClient.storage
-    .from("shoes")
-    .upload(fileName, file);
-
-  if (error) return "";
-
-  const { data: url } = supabaseClient.storage
-    .from("shoes")
-    .getPublicUrl(data.path);
-
-  return url.publicUrl;
+  alert(
+    "💬 Contact : " + email
+  );
 }
 
-// ================= MATCHING =================
-function isMatch(a, b) {
-  const aSide = (a.side || "").trim().toLowerCase();
-  const bSide = (b.side || "").trim().toLowerCase();
-
-  const aSize = Number(a.size);
-  const bSize = Number(b.size);
-
-  if (!aSide || !bSide) return false;
-  if (isNaN(aSize) || isNaN(bSize)) return false;
-
-  const sideMatch =
-    (aSide === "gauche" && bSide === "droite") ||
-    (aSide === "droite" && bSide === "gauche");
-
-  const sizeMatch = Math.abs(aSize - bSize) <= 1;
-
-  const intentMatch =
-    a.intent === "match" &&
-    b.intent === "match";
-
-  return sideMatch && sizeMatch && intentMatch;
-}
-
-// ================= ACTIONS =================
+// ================= LIKE / DISLIKE =================
 function likeAd() {
   showToast("❤️ Intéressant !");
 }
@@ -329,22 +620,52 @@ function dislikeAd() {
   showToast("❌ Pas intéressé !");
 }
 
-// ================= TOAST =================
-function showToast(message) {
-  const t = document.createElement("div");
-  t.textContent = message;
-  t.style.position = "fixed";
-  t.style.bottom = "20px";
-  t.style.left = "50%";
-  t.style.transform = "translateX(-50%)";
-  t.style.background = "#6a0dad";
-  t.style.color = "white";
-  t.style.padding = "10px 16px";
-  t.style.borderRadius = "10px";
-  document.body.appendChild(t);
+// ================= PHOTO UPLOAD =================
+async function uploadPhoto(file) {
 
-  setTimeout(() => t.remove(), 2000);
+  const fileName =
+    Date.now() + "_" + file.name;
+
+  const { data, error } =
+    await supabaseClient.storage
+      .from("shoes")
+      .upload(fileName, file);
+
+  if (error) {
+    console.error(error);
+    return "";
+  }
+
+  const { data: url } =
+    supabaseClient.storage
+      .from("shoes")
+      .getPublicUrl(data.path);
+
+  return url.publicUrl;
 }
 
-// ================= START =================
-loadAds();
+// ================= TOAST =================
+function showToast(message) {
+
+  const toast =
+    document.createElement("div");
+
+  toast.textContent = message;
+
+  toast.style.position = "fixed";
+  toast.style.bottom = "20px";
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.background = "#6a0dad";
+  toast.style.color = "white";
+  toast.style.padding = "12px 18px";
+  toast.style.borderRadius = "12px";
+  toast.style.zIndex = "9999";
+  toast.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 2000);
+}
