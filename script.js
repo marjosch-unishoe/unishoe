@@ -6,6 +6,7 @@ const supabaseClient = supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxhb3pheWl2a3JsbWZxa3p4c3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzU0NDgsImV4cCI6MjA5NDg1MTQ0OH0.raN9MS4BlWx16ve2K3mzG_vOCQ5hJGAUSPcHbABsQJ4"
 );
 
+// ================= STATE =================
 let currentUser = null;
 let ads = [];
 let allAdsCache = [];
@@ -193,6 +194,19 @@ async function deleteAd(id) {
   await loadAds();
 }
 
+// ================= RESET =================
+function resetForm() {
+  editingAdId = null;
+
+  document.getElementById("title").value = "";
+  document.getElementById("size").value = "";
+  document.getElementById("city").value = "";
+  document.getElementById("description").value = "";
+  document.getElementById("adShoeSide").value = "";
+  document.getElementById("condition").value = "";
+  document.getElementById("adType").value = "";
+}
+
 // ================= MATCH =================
 async function loadMatches() {
   if (!currentUser) return;
@@ -212,28 +226,39 @@ async function loadMatches() {
   ads.forEach(ad => {
     if (ad.user_id === currentUser.id) return;
 
+    const profileSide = profile.side || "";
+    const adSide = ad.side || "";
+
+    const profileSize = Number(profile.size || 0);
+    const adSize = Number(ad.size || 0);
+
     const opposite =
-      (profile.side === "gauche" && ad.side === "droite") ||
-      (profile.side === "droite" && ad.side === "gauche");
+      (profileSide === "gauche" && adSide === "droite") ||
+      (profileSide === "droite" && adSide === "gauche");
 
     const sameSize =
-      Math.abs(Number(profile.size ?? 0) - Number(ad.size)) <= 1;
+      Math.abs(profileSize - adSize) <= 1;
 
     if (opposite && sameSize) {
+
       html += `
         <div class="ad">
           <h3>💜 Match</h3>
-          <b>${ad.title}</b><br>
-          👟 ${ad.size}<br>
-          👣 ${ad.side}<br>
+
+          <b>${ad.title || ""}</b><br>
+          👟 ${ad.size || ""}<br>
+          👣 ${ad.side || ""}<br>
+          📍 ${ad.city || ""}<br>
 
           <button onclick="openChat('${ad.user_id}')">💬 Chat</button>
         </div>
       `;
+
+      showToast("💜 Nouveau match !");
     }
   });
 
-  container.innerHTML = html || "<p>Aucun match</p>";
+  container.innerHTML = html || "<p>Aucun match 💔</p>";
 }
 
 // ================= CHAT =================
@@ -256,58 +281,28 @@ async function sendMessage() {
   loadMessages();
 }
 
-async function loadMatches() {
-  if (!currentUser) return;
+async function loadMessages() {
+  if (!currentChatUser) return;
 
-  const { data: profile, error } = await supabaseClient
-    .from("profiles")
+  const { data } = await supabaseClient
+    .from("messages")
     .select("*")
-    .eq("id", currentUser.id)
-    .single();
+    .or(
+      `and(sender_id.eq.${currentUser.id},receiver_id.eq.${currentChatUser}),and(sender_id.eq.${currentChatUser},receiver_id.eq.${currentUser.id})`
+    )
+    .order("id");
 
-  if (error || !profile) return;
+  const box = document.getElementById("chatBox");
 
-  const container = document.getElementById("matchContainer");
-  let html = "";
+  box.innerHTML = (data || []).map(m => `
+    <div style="text-align:${m.sender_id === currentUser.id ? "right" : "left"}">
+      <span style="display:inline-block;padding:8px;border-radius:10px;background:${m.sender_id === currentUser.id ? "#6a0dad" : "#ddd"};color:${m.sender_id === currentUser.id ? "white" : "black"}">
+        ${m.message}
+      </span>
+    </div>
+  `).join("");
 
-  ads.forEach(ad => {
-    if (ad.user_id === currentUser.id) return;
-
-    // 🧠 sécurité anti-null
-    const profileSide = profile.side || "";
-    const adSide = ad.side || "";
-
-    const profileSize = Number(profile.size || 0);
-    const adSize = Number(ad.size || 0);
-
-    const opposite =
-      (profileSide === "gauche" && adSide === "droite") ||
-      (profileSide === "droite" && adSide === "gauche");
-
-    const sameSize =
-      Math.abs(profileSize - adSize) <= 1;
-
-    if (opposite && sameSize) {
-
-      html += `
-        <div class="ad">
-          <h3>💜 Match</h3>
-
-          <b>${ad.title || ""}</b><br>
-          👟 Taille : ${ad.size || ""}<br>
-          👣 Côté : ${ad.side || ""}<br>
-          📍 Ville : ${ad.city || ""}<br>
-
-          <button onclick="openChat('${ad.user_id}')">💬 Chat</button>
-        </div>
-      `;
-
-      // 🔔 notification match
-      showToast("💜 Nouveau match trouvé !");
-    }
-  });
-
-  container.innerHTML = html || "<p>Aucun match 💔</p>";
+  box.scrollTop = box.scrollHeight;
 }
 
 // ================= SOCIAL =================
@@ -364,40 +359,29 @@ function showToast(msg) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2000);
 }
-supabaseClient
-  .channel('messages-realtime')
-  .on(
-    'postgres_changes',
-    {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'messages'
-    },
-    (payload) => {
-      const m = payload.new;
 
-      if (!currentChatUser) return;
+// ================= REALTIME ADS (BONUS PROPRE) =================
+if (!window.adsRealtimeInitialized) {
+  window.adsRealtimeInitialized = true;
 
-      // 🔥 IMPORTANT : on filtre seulement le chat actif
-      const isRelevant =
-        (m.sender_id === currentUser.id && m.receiver_id === currentChatUser) ||
-        (m.sender_id === currentChatUser && m.receiver_id === currentUser.id);
+  supabaseClient
+    .channel('ads-realtime')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'ads'
+      },
+      (payload) => {
+        const newAd = payload.new;
 
-      if (!isRelevant) return;
+        ads.unshift(newAd);
+        allAdsCache.unshift(newAd);
 
-      const box = document.getElementById("chatBox");
-
-      const isMine = m.sender_id === currentUser.id;
-
-      box.innerHTML += `
-        <div style="text-align:${isMine ? "right" : "left"}">
-          <span style="display:inline-block;padding:8px;border-radius:10px;background:${isMine ? "#6a0dad" : "#ddd"};color:${isMine ? "white" : "black"}">
-            ${m.message}
-          </span>
-        </div>
-      `;
-
-      box.scrollTop = box.scrollHeight;
-    }
-  )
-  .subscribe();
+        renderAds();
+        loadMatches();
+      }
+    )
+    .subscribe();
+}
