@@ -1,8 +1,22 @@
 {
   "name": "UniShoe",
   "short_name": "UniShoe",
-  "start_url": "/",
+  "start_url": "/unishoe/",
+  "scope": "/unishoe/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#1e90ff"
+  "theme_color": "#1e90ff",
+  "description": "Plateforme d’échange et de partage de chaussures",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }

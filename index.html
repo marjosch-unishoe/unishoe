@@ -386,5 +386,9 @@ Aucune notification.
 
 <script src="script.js" defer></script>
 
-</body>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/unishoe/service-worker.js');
+}
+</script></body>
 </html>
