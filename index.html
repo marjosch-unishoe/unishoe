@@ -1,183 +1,386 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>UniShoe</title>
+<title>💜 UniShoe</title>
 
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
 
-  <meta name="theme-color" content="#1e90ff">
+<meta name="theme-color" content="#6a0dad">
 
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
 </head>
 
 <body>
 
 <div class="app">
 
-  <!-- HERO -->
-  <header class="hero">
-    <h1>💜 UniShoe 💜</h1>
+<header class="hero">
 
-    <p class="tagline">
-      UniShoe connecte les personnes qui n’ont besoin que d’une seule chaussure afin de trouver, échanger ou partager plus facilement.
-    </p>
+<h1>💜 UniShoe 💜</h1>
 
-    <p class="slogan">
-      Parce qu'ensemble, chaque pas compte.
-    </p>
-  </header>
+<p class="tagline">
+UniShoe connecte les personnes qui n’ont besoin que d’une seule chaussure afin de trouver, échanger ou partager plus facilement.
+</p>
 
-  <!-- AUTH -->
-  <section class="auth">
-    <h2>🔐 Connexion</h2>
+<p class="slogan">
+Parce qu'ensemble, chaque pas compte.
+</p>
 
-    <input id="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Mot de passe">
+</header>
 
-    <button onclick="registerUser()">S'inscrire</button>
-    <button onclick="loginUser()">Connexion</button>
-    <button onclick="logoutUser()">Déconnexion</button>
+<section class="auth">
 
-    <p id="welcome"></p>
-  </section>
+<h2>🔐 Connexion</h2>
 
-  <!-- PROFILE -->
-  <section class="profile">
-    <h2>👤 Que souhaites-tu faire ?</h2>
+<input id="email" type="email" placeholder="Email">
 
-    <select id="userIntent">
-      <option value="">Je veux…</option>
-      <option value="match">Trouver la chaussure qu'il me faut</option>
-      <option value="exchange">Échanger une chaussure</option>
-      <option value="share">Partager un achat</option>
-    </select>
+<input id="password" type="password" placeholder="Mot de passe">
 
-    <div id="matchOptions"></div>
+<div class="buttonRow">
+<button onclick="registerUser()">S'inscrire</button>
+<button onclick="loginUser()">Connexion</button>
+<button onclick="logoutUser()">Déconnexion</button>
+</div>
 
-    <input id="searchSize" placeholder="Pointure recherchée">
+<p id="welcome"></p>
 
-    <button onclick="saveProfile()">Continuer</button>
+</section>
 
-    <p id="profileStatus"></p>
-  </section>
+<section class="profile">
 
-  <!-- HOW -->
-  <section class="how">
+<h2>👤 Mon profil</h2>
 
-    <h2>🧠 Comment ça marche ?</h2>
+<input id="displayName" placeholder="Pseudo (prochaine version)">
 
-    <div class="step">
-      <div class="icon">🔍</div>
-      <h3>Tu recherches une chaussure</h3>
-      <p>
-        Tu indiques le côté recherché et ta pointure.
-        UniShoe te propose automatiquement des annonces compatibles.
-      </p>
-    </div>
+<select id="userIntent">
 
-    <div class="step">
-      <div class="icon">📢</div>
-      <h3>Tu publies une annonce</h3>
-      <p>
-        Ajoute ta chaussure, son côté, sa pointure et une photo.
-        Les personnes compatibles pourront te contacter.
-      </p>
-    </div>
+<option value="">Je veux…</option>
 
-    <div class="step">
-      <div class="icon">💬</div>
-      <h3>Vous échangez en privé</h3>
-      <p>
-        Lorsqu’un match est trouvé, vous pouvez discuter directement
-        dans le chat privé intégré.
-      </p>
-    </div>
+<option value="match">
+Trouver la chaussure qu'il me faut
+</option>
 
-  </section>
+<option value="exchange">
+Échanger une chaussure
+</option>
 
-  <!-- FORM -->
-  <section class="form">
-    <h2>📢 Publier une chaussure</h2>
+<option value="share">
+Partager un achat
+</option>
 
-    <select id="adType">
-      <option value="">Type d'annonce</option>
+</select>
 
-      <option value="offer">
-        Je propose une chaussure
-      </option>
+<div id="matchOptions"></div>
 
-      <option value="exchange">
-        Je souhaite un échange
-      </option>
+<input
+id="searchSize"
+type="number"
+placeholder="Pointure recherchée">
 
-      <option value="share">
-        Je veux partager un achat
-      </option>
-    </select>
+<button onclick="saveProfile()">
+Continuer
+</button>
 
-    <input id="title" placeholder="Marque / modèle">
-    <input id="size" placeholder="Pointure">
+<p id="profileStatus"></p>
 
-    <textarea id="description" placeholder="Description de la chaussure"></textarea>
+</section>
 
-    <input id="city" placeholder="Ville">
+<section class="stats">
 
-    <input type="file" id="photoFile" accept="image/*">
+<h2>📊 Statistiques</h2>
 
-    <select id="adShoeSide" required>
-      <option value="">Côté de la chaussure</option>
-      <option value="gauche">Gauche</option>
-      <option value="droite">Droite</option>
-    </select>
+<div class="statsGrid">
 
-    <select id="condition">
-      <option value="">État de la chaussure</option>
-      <option value="neuf">Neuf</option>
-      <option value="tres_bon">Très bon état</option>
-      <option value="bon">Bon état</option>
-      <option value="use">Usé</option>
-    </select>
+<div class="statCard">
+<h3 id="totalAds">0</h3>
+<p>Annonces</p>
+</div>
 
-    <button onclick="addAd()">📢 Publier</button>
+<div class="statCard">
+<h3 id="totalMatches">0</h3>
+<p>Matchs</p>
+</div>
 
-    <button id="cancelBtn"
-            onclick="cancelEdit()"
-            style="display:none;">
-      ❌ Annuler
-    </button>
-  </section>
+<div class="statCard">
+<h3 id="totalUsers">0</h3>
+<p>Utilisateurs</p>
+</div>
 
-  <!-- MATCHS -->
-  <section>
-    <h2>💜 Tes matchs</h2>
-    <div id="matchContainer"></div>
-  </section>
+</div>
 
-  <!-- ADS -->
-  <section>
-    <h2>📦 Annonces</h2>
-    <div id="ads"></div>
-  </section>
+</section>
 
-  <!-- CHAT -->
-  <section class="chatSection">
+<section class="how">
 
-    <h2>💬 Chat privé</h2>
+<h2>🧠 Comment ça marche ?</h2>
 
-    <div id="chatBox"></div>
+<div class="step">
 
-    <input id="chatMessage" placeholder="Écrire un message...">
+<div class="icon">🔍</div>
 
-    <button onclick="sendMessage()">
-      Envoyer
-    </button>
+<h3>Recherche intelligente</h3>
 
-  </section>
+<p>
+Indique ton besoin et ta pointure.
+UniShoe trouve automatiquement les annonces compatibles.
+</p>
+
+</div>
+
+<div class="step">
+
+<div class="icon">📢</div>
+
+<h3>Publie une annonce</h3>
+
+<p>
+Ajoute une chaussure gauche ou droite et trouve rapidement une personne compatible.
+</p>
+
+</div>
+
+<div class="step">
+
+<div class="icon">💬</div>
+
+<h3>Discutez en privé</h3>
+
+<p>
+Une fois le match trouvé, échangez directement dans le chat intégré.
+</p>
+
+</div>
+
+</section>
+
+<section class="filters">
+
+<h2>🔎 Rechercher</h2>
+
+<input
+id="filterText"
+placeholder="Marque ou modèle">
+
+<input
+id="filterSize"
+type="number"
+placeholder="Pointure">
+
+<select id="filterSide">
+
+<option value="">
+Tous les côtés
+</option>
+
+<option value="gauche">
+Gauche
+</option>
+
+<option value="droite">
+Droite
+</option>
+
+</select>
+
+<select id="filterType">
+
+<option value="">
+Tous les types
+</option>
+
+<option value="offer">
+Chaussure proposée
+</option>
+
+<option value="exchange">
+Échange
+</option>
+
+<option value="share">
+Partage d'achat
+</option>
+
+</select>
+
+<button onclick="applyFilters()">
+Filtrer
+</button>
+
+<button onclick="resetFilters()">
+Réinitialiser
+</button>
+
+</section>
+
+<section class="form">
+
+<h2>📢 Publier une chaussure</h2>
+
+<select id="adType">
+
+<option value="">
+Type d'annonce
+</option>
+
+<option value="offer">
+Je propose une chaussure
+</option>
+
+<option value="exchange">
+Je souhaite un échange
+</option>
+
+<option value="share">
+Je veux partager un achat
+</option>
+
+</select>
+
+<input id="title" placeholder="Marque / modèle">
+
+<input
+id="size"
+type="number"
+placeholder="Pointure">
+
+<textarea
+id="description"
+placeholder="Description">
+</textarea>
+
+<input
+id="city"
+placeholder="Ville">
+
+<input
+type="file"
+id="photoFile"
+accept="image/*">
+
+<select id="adShoeSide">
+
+<option value="">
+Côté de la chaussure
+</option>
+
+<option value="gauche">
+Gauche
+</option>
+
+<option value="droite">
+Droite
+</option>
+
+</select>
+
+<select id="condition">
+
+<option value="">
+État
+</option>
+
+<option value="neuf">
+Neuf
+</option>
+
+<option value="tres_bon">
+Très bon état
+</option>
+
+<option value="bon">
+Bon état
+</option>
+
+<option value="use">
+Usé
+</option>
+
+</select>
+
+<div class="buttonRow">
+
+<button onclick="addAd()">
+📢 Publier
+</button>
+
+<button
+id="cancelBtn"
+onclick="cancelEdit()"
+style="display:none;">
+❌ Annuler </button>
+
+</div>
+
+</section>
+
+<section>
+
+<h2>💜 Tes matchs</h2>
+
+<div id="matchContainer">
+<p>Aucun match actuellement.</p>
+</div>
+
+</section>
+
+<section>
+
+<h2>📦 Annonces</h2>
+
+<div id="ads"></div>
+
+</section>
+
+<section class="chatSection">
+
+<h2>💬 Chat privé</h2>
+
+<div id="currentChatUser"></div>
+
+<div id="chatBox"></div>
+
+<div class="chatControls">
+
+<input
+id="chatMessage"
+placeholder="Écrire un message...">
+
+<button onclick="sendMessage()">
+Envoyer
+</button>
+
+</div>
+
+</section>
+
+<section>
+
+<h2>📣 Notifications</h2>
+
+<div id="notifications">
+
+<p>
+Aucune notification.
+</p>
+
+</div>
+
+</section>
+
+<footer>
+
+<p>
+💜 UniShoe — Parce qu'ensemble, chaque pas compte.
+</p>
+
+</footer>
 
 </div>
 
