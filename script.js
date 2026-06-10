@@ -112,7 +112,10 @@ function renderAds(list = ads) {
         🧼 ${ad.condition || ""}<br>
         📝 ${ad.description || ""}<br>
 
-        ${ad.photo ? `<img src="${ad.photo}" width="140">` : ""}
+        ${ad.photo
+  ? `<img class="ad-img" src="${ad.photo}" alt="photo">`
+  : ""
+}
 
         <br><br>
 
@@ -183,7 +186,11 @@ function editAd(id) {
   document.getElementById("adType").value = ad.type || "";
 
   editingAdId = id;
-  showToast("✏️ Édition activée");
+  const btn =
+  document.getElementById("cancelBtn");
+
+if (btn)
+  btn.style.display = "block"; showToast("✏️ Édition activée");
 }
 
 // ================= DELETE =================
@@ -268,8 +275,15 @@ async function openChat(userId) {
 }
 
 async function sendMessage() {
-  const text = document.getElementById("chatMessage").value;
-  if (!text || !currentChatUser) return;
+
+  if (!currentUser)
+    return alert("Connecte-toi");
+
+  const text =
+    document.getElementById("chatMessage").value;
+
+  if (!text || !currentChatUser)
+    return ;
 
   await supabaseClient.from("messages").insert([{
     sender_id: currentUser.id,
@@ -307,14 +321,40 @@ async function loadMessages() {
 
 // ================= SOCIAL =================
 async function likeAd(id) {
-  await supabaseClient.from("likes").insert([{ ad_id: id, user_id: currentUser.id }]);
+
+  if (!currentUser)
+    return alert("Connecte-toi");
+
+  await supabaseClient
+    .from("likes")
+    .insert([
+      {
+        ad_id: id,
+        user_id: currentUser.id
+      }
+    ]);
+
   showToast("❤️ Like");
-}
+} ;
+
 
 async function reportAd(id) {
-  await supabaseClient.from("reports").insert([{ ad_id: id, user_id: currentUser.id }]);
+
+  if (!currentUser)
+    return alert("Connecte-toi");
+
+  await supabaseClient
+    .from("reports")
+    .insert([
+      {
+        ad_id: id,
+        user_id: currentUser.id
+      }
+    ]);
+
   showToast("🚩 Signalé");
-}
+};
+
 
 // ================= STATS =================
 async function loadStats() {
@@ -384,4 +424,106 @@ if (!window.adsRealtimeInitialized) {
       }
     )
     .subscribe();
-}
+} // ================= PROFILE =================
+async function saveProfile() {
+
+  if (!currentUser)
+    return alert("Connecte-toi");
+
+  const profile = {
+    id: currentUser.id,
+    email: currentUser.email,
+    display_name:
+      document.getElementById("displayName").value || "",
+    intent:
+      document.getElementById("userIntent").value || "",
+    size:
+      Number(document.getElementById("searchSize").value || 0)
+  };
+
+  const { error } = await supabaseClient
+    .from("profiles")
+    .upsert(profile);
+
+  if (error)
+    return alert(error.message);
+
+  document.getElementById("profileStatus").textContent =
+    "✅ Profil enregistré";
+
+  showToast("💜 Profil sauvegardé");
+
+  loadMatches();
+} // ================= FILTERS =================
+function applyFilters() {
+
+  const text =
+    document.getElementById("filterText").value
+      .toLowerCase()
+      .trim();
+
+  const size =
+    document.getElementById("filterSize").value;
+
+  const side =
+    document.getElementById("filterSide").value;
+
+  const type =
+    document.getElementById("filterType").value;
+
+  const filtered = allAdsCache.filter(ad => {
+
+    const matchText =
+      !text ||
+      (ad.title || "")
+        .toLowerCase()
+        .includes(text);
+
+    const matchSize =
+      !size ||
+      String(ad.size) === String(size);
+
+    const matchSide =
+      !side ||
+      ad.side === side;
+
+    const matchType =
+      !type ||
+      ad.type === type;
+
+    return (
+      matchText &&
+      matchSize &&
+      matchSide &&
+      matchType
+    );
+
+  });
+
+  renderAds(filtered);
+} function resetFilters() {
+
+  document.getElementById("filterText").value = "";
+  document.getElementById("filterSize").value = "";
+  document.getElementById("filterSide").value = "";
+  document.getElementById("filterType").value = "";
+
+  renderAds(allAdsCache);
+
+  showToast("🔄 Filtres réinitialisés");
+} function cancelEdit() {
+
+  resetForm();
+
+  const btn =
+    document.getElementById("cancelBtn");
+
+  if (btn)
+    btn.style.display = "none";
+
+  showToast("❌ Édition annulée");
+}const btn =
+  document.getElementById("cancelBtn");
+
+if (btn)
+  btn.style.display = "none";
